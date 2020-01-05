@@ -32,6 +32,9 @@ dependencies {
         exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
     }
     compile("mysql:mysql-connector-java:6.0.3")
+    runtimeOnly 'com.h2database:h2'
+
+    compile 'javax.mail:mail:1.5.0-b01'
 }
 
 test {

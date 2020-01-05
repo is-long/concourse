@@ -1,16 +1,15 @@
-import {Component} from '@angular/core';
-import {AuthService} from "./services/auth.service";
+import {Component, Input, OnInit} from '@angular/core';
+import {AuthService} from "../services/auth.service";
 import {Router} from "@angular/router";
 
 @Component({
-  selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css']
+  selector: 'app-navbar',
+  templateUrl: './navbar.component.html',
+  styleUrls: ['./navbar.component.css']
 })
-export class AppComponent {
-  title = 'Concourse';
+export class NavbarComponent implements OnInit {
 
-  private authenticated: boolean;
+  authenticated: boolean;
 
   constructor(private authService: AuthService,
               private router: Router) {
@@ -23,5 +22,8 @@ export class AppComponent {
 
   private changeAuthenticated(authed: boolean) {
     this.authenticated = authed;
+  }
+
+  ngOnInit() {
   }
 }
