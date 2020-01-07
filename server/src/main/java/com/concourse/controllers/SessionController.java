@@ -1,16 +1,13 @@
 package com.concourse.controllers;
 
 import com.concourse.models.Session;
-import com.concourse.models.Token;
 import com.concourse.repository.SessionRepository;
-import com.concourse.tools.EmailTools;
+import com.concourse.tools.EmailServices;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
-import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -21,6 +18,9 @@ public class SessionController {
 
     @Autowired
     private SessionRepository sessionRepository;
+
+    @Autowired
+    private EmailServices emailServices;
 
     public SessionController(SessionRepository sessionRepository) {
         this.sessionRepository = sessionRepository;
@@ -33,7 +33,7 @@ public class SessionController {
      */
     @PostMapping("new")
     public Session generate(@RequestBody Session session) {
-        if (session.getEmail() == null || !EmailTools.isValidEmailAddress(session.getEmail())) {
+        if (session.getEmail() == null || !emailServices.isValidEmailAddress(session.getEmail())) {
             log.info("Can't generate Session: Email is invalid");
             return null;
         }
@@ -47,7 +47,7 @@ public class SessionController {
     @PostMapping("validate")
     public boolean validate(@RequestBody Session session){
         log.info("Session to validate: " + session);
-        if (session.getEmail() == null || !EmailTools.isValidEmailAddress(session.getEmail())) {
+        if (session.getEmail() == null || !emailServices.isValidEmailAddress(session.getEmail())) {
             log.info("Invalid session: Email is invalid");
             return false;
         }
@@ -76,7 +76,7 @@ public class SessionController {
 
     @PostMapping("purge")
     public boolean purge(@RequestBody Session session){
-        if (session.getEmail() == null || !EmailTools.isValidEmailAddress(session.getEmail())) {
+        if (session.getEmail() == null || !emailServices.isValidEmailAddress(session.getEmail())) {
             log.info("Invalid session: Email is invalid");
             return false;
         }

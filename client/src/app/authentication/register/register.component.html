@@ -1,0 +1,56 @@
+<div class="container">
+  <div class="row">
+    <div class="col-sm-9 col-md-7 col-lg-5 mx-auto">
+      <div class="card card-signin my-5">
+        <div class="card-body">
+          <h5 class="card-title text-center">Register to Concourse</h5>
+          <br>
+          <div *ngIf="!isFormCorrect" class="alert alert-danger">One or more items is invalid. </div>
+          <form>
+            <div class="form-group">
+              <p>I am a/an </p>
+              <label style="margin-right: 5%">
+                <input type="radio" name="role" value="INSTRUCTOR" (click)="setRole($event.target['value'])">
+                Instructor
+              </label>
+              <label>
+                <input type="radio" name="role" value="STUDENT" (click)="setRole($event.target['value'])">
+                Student
+              </label>
+            </div>
+
+            <div class="form-group">
+              <label for="displayName">Name</label><br>
+              <input class="form-control" type="text" id="displayName" name="name" [(ngModel)]="name"
+                     placeholder="Enter a display name" required autofocus>
+            </div>
+
+            <div class="form-group">
+              <label for="inputEmail">Email address</label>
+              <input
+                pattern="/^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/"
+                type="email"
+                id="inputEmail"
+                class="form-control"
+                placeholder="Enter a valid email address"
+                required
+                name="email"
+                [(ngModel)]="email">
+            </div>
+            <button *ngIf="!isRegistered && !finishedRegistration" class="btn btn-lg btn-outline-primary btn-block text-uppercase" type="button" (click)="register()"
+                    [disabled]="isRegistered || finishedRegistration">
+              Register
+            </button>
+            <div *ngIf="isRegistered" class="alert alert-danger">You're already registered. Please
+              <a routerLink="/login">Login</a>
+            </div>
+            <div *ngIf="finishedRegistration" class="alert alert-success"><b>Success</b>.
+              Please finish registration by clicking the confirmation link on your email.</div>
+            <div *ngIf="failedRegistration" class="alert alert-success">Registration failed.
+              <a routerLink="/register">Retry</a></div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

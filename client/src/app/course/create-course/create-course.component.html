@@ -1,0 +1,23 @@
+<div class="container" style="margin-top: 2%">
+  <h2>Create a New Course</h2>
+  <br>
+  <form>
+
+    <label>Course Name</label><br>
+      <input type="text" name="name" [(ngModel)]="name" placeholder="Course name" required>
+    <br><br>
+    <label>Course Description</label><br>
+    <textarea name="description" id="courseDescription" cols="50" rows="5" [(ngModel)]="description" placeholder="Short course description" required></textarea>
+    <br> <br>
+
+    <label>Invite Instructors/TAs</label><br>
+    <textarea name="description" id="instructorInviteField" cols="50" rows="5" placeholder="Enter comma-separated email addresses of the instructors (excluding yours)" [(ngModel)]="instructorEmailString"></textarea>
+    <br><br>
+
+    <label>Invite Students</label><br>
+    <textarea name="description" id="studentInviteField" cols="50" rows="5" placeholder="Enter comma-separated email addresses of the students" [(ngModel)]="studentEmailString"></textarea>
+    <br><br>
+    <button type="submit" (click)="onSubmit()" class="btn btn-success">Create</button>
+  </form>
+  <br><br>
+</div>

@@ -1,6 +1,6 @@
 package com.concourse.repository;
 
-import com.concourse.models.User;
+import com.concourse.models.users.User;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 

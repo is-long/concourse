@@ -1,0 +1,10 @@
+package com.concourse.repository;
+
+import com.concourse.models.users.Student;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface StudentRepository extends CrudRepository<Student, String> {
+
+}

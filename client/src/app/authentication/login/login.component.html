@@ -23,6 +23,10 @@
                       (click)="submitEmail($event)">Send Code
               </button>
             </form>
+            <br>
+            <div class="alert alert-danger" *ngIf="!isRegistered">
+              You are not registered. Please <a routerLink="/register"><b>register</b></a>.
+            </div>
           </div>
 
           <div class="form-label-group" *ngIf="isCodeSent">

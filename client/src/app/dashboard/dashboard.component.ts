@@ -10,6 +10,7 @@ import {Router} from "@angular/router";
 export class DashboardComponent implements OnInit, OnDestroy {
 
   email;
+  isInstructor: boolean = true;
 
   constructor(private authService: AuthService, private router: Router) { }
 
