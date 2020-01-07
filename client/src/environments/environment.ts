@@ -1,4 +1,4 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://concourse-env.m82hjppbnt.us-east-2.elasticbeanstalk.com' //BACKEND API URL HERE
+  apiUrl: 'https://concourse-env.m82hjppbnt.us-east-2.elasticbeanstalk.com' //BACKEND API URL HERE
 };
