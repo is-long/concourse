@@ -1,3 +1,5 @@
+import {QuestionRoot} from "./post/question-root";
+
 export class Course{
   id: string;  //course id
   name: string; //course display name
@@ -6,5 +8,8 @@ export class Course{
 
   instructorIds: string[];
   studentIds: string[];
-  questionRootIds: string[];
+
+  questionRootList: QuestionRoot[];
+  // questionRootIds: string[];
+
 }

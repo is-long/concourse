@@ -1,6 +1,7 @@
 package com.concourse.controllers;
 
 import com.concourse.models.ConfirmationToken;
+import com.concourse.models.Session;
 import com.concourse.models.users.Instructor;
 import com.concourse.models.users.Student;
 import com.concourse.models.users.User;
@@ -29,13 +30,15 @@ public class UserController {
     private CourseRepository courseRepository;
     private InstructorRepository instructorRepository;
     private StudentRepository studentRepository;
+    private SessionRepository sessionRepository;
     private EmailConfirmationTokenRepository emailConfirmationTokenRepository;
 
-    public UserController(UserRepository userRepository, CourseRepository courseRepository, InstructorRepository instructorRepository, StudentRepository studentRepository, EmailConfirmationTokenRepository emailConfirmationTokenRepository) {
+    public UserController(UserRepository userRepository, CourseRepository courseRepository, InstructorRepository instructorRepository, StudentRepository studentRepository, SessionRepository sessionRepository, EmailConfirmationTokenRepository emailConfirmationTokenRepository) {
         this.userRepository = userRepository;
         this.courseRepository = courseRepository;
         this.instructorRepository = instructorRepository;
         this.studentRepository = studentRepository;
+        this.sessionRepository = sessionRepository;
         this.emailConfirmationTokenRepository = emailConfirmationTokenRepository;
     }
 
@@ -57,6 +60,26 @@ public class UserController {
     @GetMapping("all/confirmationToken")
     public List<ConfirmationToken> getConfirmationToken() {
         return (List<ConfirmationToken>) emailConfirmationTokenRepository.findAll();
+    }
+
+    @PostMapping("self")
+    public User getSelf(@RequestBody Session session){
+        if (session == null || session.getSessionId() == null || session.getEmail() == null){
+            log.info("Failed to check instructor role: Session has nulls");
+            return null;
+        }
+        Optional<Session> optionalSession = sessionRepository.findById(session.getSessionId());
+        if (!optionalSession.isPresent()){
+            log.info("Failed to check instructor role: Session does not exist");
+            return null;
+        }
+        Optional<User> optionalUser = userRepository.findById(optionalSession.get().getEmail());
+        if (optionalUser.isPresent()){
+            log.info("RETURNING SELF " + optionalUser.get());
+            return optionalUser.get();
+        }
+        log.info("User does not exist?");
+        return null;
     }
 
     @GetMapping("registration/confirm/{confirmationId}")
@@ -93,7 +116,7 @@ public class UserController {
     @PostMapping("registration/new/instructor")
     public Instructor addInstructor(@RequestBody Instructor instructor) {
         log.info("TRYING TO ADD INSTRUCTOR: " + instructor);
-        log.info("TRYING TO ADD USER : " + (User) instructor);
+        log.info("TRYING TO ADD USER : " + ((User) instructor).getEmail());
         if (!checkRegistration(instructor)){
             ConfirmationToken token =
                     emailConfirmationTokenRepository.findConfirmationTokenByEmail(instructor.getEmail());

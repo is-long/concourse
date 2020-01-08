@@ -22,7 +22,7 @@ export class NegateLoggedInGuard implements CanActivate {
   canActivate(
     next: ActivatedRouteSnapshot,
     state: RouterStateSnapshot): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
-    if (!sessionStorage.getItem('email') || !sessionStorage.getItem('sessionId')){
+    if (!localStorage.getItem('email') || !localStorage.getItem('sessionId')){
       return true;
     } else {
       return new Promise((resolve) => {

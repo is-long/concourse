@@ -14,8 +14,8 @@ export class LogoutComponent implements OnInit {
       data => {
         if (data){
           this.auth.isAuth.emit(false);
-          sessionStorage.removeItem('sessionId');
-          sessionStorage.removeItem('email');
+          localStorage.removeItem('sessionId');
+          localStorage.removeItem('email');
           this.router.navigateByUrl('/home');
         }
       }

@@ -46,16 +46,16 @@ export class LoginComponent implements OnInit {
           this.auth.setAuthenticated(true, token).subscribe(
             d => {
               this.auth.isAuth.emit(true);
-              sessionStorage.setItem('sessionId', d.sessionId);
-              sessionStorage.setItem('email', d.email);
+              localStorage.setItem('sessionId', d.sessionId);
+              localStorage.setItem('email', d.email);
               this.router.navigateByUrl('/dashboard');
             }
           )
           ;
         } else {
           this.auth.isAuth.emit(false);
-          sessionStorage.removeItem('sessionId');
-          sessionStorage.removeItem('email');
+          localStorage.removeItem('sessionId');
+          localStorage.removeItem('email');
           this.router.navigateByUrl('/login');
         }
       }

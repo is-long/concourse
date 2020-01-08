@@ -19,7 +19,7 @@ export class JoinCourseComponent implements OnInit {
   }
 
   join() {
-    this.courseService.joinCourse(this.courseId, sessionStorage.getItem('sessionId'), this.inviteId)
+    this.courseService.joinCourse(this.courseId, localStorage.getItem('sessionId'), this.inviteId)
       .subscribe(
         data => {
           if (data) {

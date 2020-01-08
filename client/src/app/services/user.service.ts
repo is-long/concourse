@@ -4,8 +4,9 @@ import {Router} from "@angular/router";
 import {User} from "../shared/user/user";
 import {environment} from "../../environments/environment.prod";
 import {Student} from "../shared/user/student";
-import {InstructorService} from "./instructor.service";
 import {Instructor} from "../shared/user/instructor";
+import {AuthService} from "./auth.service";
+
 
 @Injectable({
   providedIn: 'root'
@@ -15,15 +16,21 @@ export class UserService {
   private url: string = environment.apiUrl;
 
   constructor(
-    private http: HttpClient,
-    private router: Router
-  ) { }
+    private http: HttpClient, private router: Router, private authService: AuthService
+  ) {
+    this.url = this.url.replace("https", "http");
+  }
 
   confirmRegistration(confirmationId: string){
     return this.http.get(this.url + "/user/registration/confirm/" + confirmationId);
   }
 
+  getSelf(){
+    return this.http.post<User>(this.url + "/user/self", this.authService.getSession())
+  }
+
   isRegistered(user: User){
+    this.url = this.url.replace("https", "http");
     return this.http.post<boolean>(this.url + "/user/registration/check", user);
   }
 

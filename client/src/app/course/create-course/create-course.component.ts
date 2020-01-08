@@ -24,10 +24,11 @@ export class CreateCourseComponent implements OnInit {
     let course: Course = new Course();
     course.name = this.name;
     course.description = this.description;
-    course.creatorInstructorId = sessionStorage.getItem('email');
+    course.creatorInstructorId = localStorage.getItem('email');
     course.instructorIds = this.emailStringToEmailArray(this.instructorEmailString);
+    course.instructorIds.push(course.creatorInstructorId);  //add creator
     course.studentIds =  this.emailStringToEmailArray(this.studentEmailString);
-    course.questionRootIds = [];
+    course.questionRootList = [];
 
     //create course and send invitation emails
     this.courseService.addCourse(course).subscribe(

@@ -12,10 +12,13 @@ import { LogoutComponent } from './authentication/logout/logout.component';
 import {FormsModule} from "@angular/forms";
 import { CreateCourseComponent } from './course/create-course/create-course.component';
 import { RegisterComponent } from './authentication/register/register.component';
-import { ConfirmInvitePageComponent } from './course/confirm-invite-page/confirm-invite-page.component';
 import { CourseHomeComponent } from './course/course-home/course-home.component';
 import { RegisterConfirmComponent } from './authentication/register/register-confirm/register-confirm.component';
 import { JoinCourseComponent } from './course/join-course/join-course.component';
+import {FontAwesomeModule} from "@fortawesome/angular-fontawesome";
+import { CreatePostComponent } from './course/post/create-post/create-post.component';
+import { ProfileComponent } from './profile/profile.component';
+import { PostHomeComponent } from './course/post/post-home/post-home.component';
 
 @NgModule({
   declarations: [
@@ -27,16 +30,19 @@ import { JoinCourseComponent } from './course/join-course/join-course.component'
     LogoutComponent,
     CreateCourseComponent,
     RegisterComponent,
-    ConfirmInvitePageComponent,
     CourseHomeComponent,
     RegisterConfirmComponent,
     JoinCourseComponent,
+    CreatePostComponent,
+    ProfileComponent,
+    PostHomeComponent,
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
     HttpClientModule,
-    FormsModule
+    FormsModule,
+    FontAwesomeModule
   ],
   providers: [],
   bootstrap: [AppComponent]

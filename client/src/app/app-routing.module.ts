@@ -8,12 +8,14 @@ import {NegateLoggedInGuard} from "./guards/negate-logged-in.guard";
 import {LoggedInGuard} from "./guards/logged-in.guard";
 import {InstructorGuard} from "./guards/instructor.guard";
 import {CreateCourseComponent} from "./course/create-course/create-course.component";
-import {ConfirmInvitePageComponent} from "./course/confirm-invite-page/confirm-invite-page.component";
 import {CourseHomeComponent} from "./course/course-home/course-home.component";
 import {InvolvedInCourseGuard} from "./guards/involved-in-course.guard";
 import {RegisterComponent} from "./authentication/register/register.component";
 import {RegisterConfirmComponent} from "./authentication/register/register-confirm/register-confirm.component";
 import {JoinCourseComponent} from "./course/join-course/join-course.component";
+import {ProfileComponent} from "./profile/profile.component";
+import {PostHomeComponent} from "./course/post/post-home/post-home.component";
+import {CreatePostComponent} from "./course/post/create-post/create-post.component";
 
 
 const routes: Routes = [
@@ -27,6 +29,11 @@ const routes: Routes = [
     path: 'dashboard',
     canActivate: [LoggedInGuard],
     pathMatch: 'full', component: DashboardComponent
+  },
+  {
+    path: 'profile',
+    canActivate: [LoggedInGuard],
+    pathMatch: 'full', component: ProfileComponent
   },
   {
     path: 'logout',
@@ -49,22 +56,30 @@ const routes: Routes = [
     pathMatch: 'full', component: RegisterConfirmComponent
   },
   {
-    path: 'course/:courseId/home',
-    canActivate: [LoggedInGuard, InvolvedInCourseGuard],
-    pathMatch: 'full', component:CourseHomeComponent
-  },
-  {
     path: 'course/create',
     canActivate: [LoggedInGuard, InstructorGuard],
     pathMatch: 'full', component: CreateCourseComponent
   },
-
   {
     path: 'course/join',
     canActivate: [LoggedInGuard],
     pathMatch: 'full', component: JoinCourseComponent
   },
-
+  {
+    path: 'course/:courseId',
+    canActivate: [LoggedInGuard, InvolvedInCourseGuard],
+    pathMatch: 'full', component:CourseHomeComponent
+  },
+  {
+    path: 'course/:courseId/post/new',
+    canActivate: [LoggedInGuard, InvolvedInCourseGuard],
+    pathMatch: 'full', component: CreatePostComponent
+  },
+  {
+    path: 'course/:courseId/post/:postId',
+    canActivate: [LoggedInGuard, InvolvedInCourseGuard],
+    pathMatch: 'full', component: PostHomeComponent
+  },
   {
     path: '**',
     redirectTo: 'home',

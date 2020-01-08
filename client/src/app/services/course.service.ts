@@ -14,6 +14,11 @@ export class CourseService {
 
   constructor(private http: HttpClient, private authService: AuthService) { }
 
+
+  getCourse(courseId: string){
+    return this.http.post<Course>(this.url + "/course/" + courseId + "/get", this.authService.getSession());
+  }
+
   addCourse(course: Course){
     let session: Session = this.authService.getSession();
     return this.http.post<Course>(this.url + "/course/new/" + session.sessionId, course);

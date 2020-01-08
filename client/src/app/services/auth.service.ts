@@ -13,6 +13,7 @@ export class AuthService {
   @Output() isAuth: EventEmitter<any> = new EventEmitter();
 
   constructor(private http: HttpClient) {
+    this.url = this.url.replace("https", "http");
   }
 
   sendCode(token: Token) {
@@ -31,14 +32,12 @@ export class AuthService {
 
   getSession() {
     let session: Session = new Session();
-    session.email = sessionStorage.getItem('email');
-    session.sessionId = sessionStorage.getItem('sessionId');
+    session.email = localStorage.getItem('email');
+    session.sessionId = localStorage.getItem('sessionId');
     return session;
   }
 
   isAuthenticated() {
-    console.log("in isAuthenticated, session is " + sessionStorage.getItem('email') + " "
-      + sessionStorage.getItem('sessionId'));
     return this.http.post<boolean>(this.url + '/session/validate', this.getSession());
   }
 

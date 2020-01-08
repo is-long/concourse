@@ -1,1 +1,30 @@
-<p>course-home works!</p>
+<div class="container">
+  <br>
+  <h3 class="text-center">Welcome to {{course.name}}</h3>
+  <br>
+  <div class="container">
+    <div class="row">
+      <button class="btn btn-outline-success" style="margin-right: 5px" routerLink="post/new">New Post</button>
+      <button class="btn btn-outline-primary " style="margin-right: 5px">Search</button>
+      <button class="btn btn-outline-danger" style="margin-right: 5px">Filter</button>
+    </div>
+    <br>
+    <i class="fas fa-bars"></i>
+    <div class="row" >
+      <div class="col-1 " style="float:none; margin: 0 auto; background-color: red">
+        <div class="row">
+          <fa-icon [icon]="faArrowUp"></fa-icon>
+        </div>
+        <div class="row">
+          <fa-icon [icon]="faArrowDown"></fa-icon>
+        </div>
+      </div>
+      <div class="col-10" style="background-color: blue">
+        Hello World
+      </div>
+      <div class="col" style="background-color: red">
+        Hello World
+      </div>
+    </div>
+  </div>
+</div>

@@ -4,6 +4,7 @@ import com.concourse.models.Course;
 import com.concourse.models.CourseInviteToken;
 import com.concourse.models.Session;
 import com.concourse.models.posts.Post;
+import com.concourse.models.posts.QuestionRoot;
 import com.concourse.models.users.Instructor;
 import com.concourse.models.users.Student;
 import com.concourse.models.users.User;
@@ -14,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -29,6 +31,7 @@ public class CourseController {
     private StudentRepository studentRepository;
     private InstructorRepository instructorRepository;
     private CourseInviteTokenRepository courseInviteTokenRepository;
+    private QuestionRootRepository questionRootRepository;
     private EmailServices emailServices;
 
     public CourseController(UserRepository userRepository, CourseRepository courseRepository, SessionRepository sessionRepository, PostRepository postRepository,
@@ -79,7 +82,7 @@ public class CourseController {
         Course course = optionalCourse.get();
 
         //check the role
-        if (courseInviteToken.getRole().equals("INSTRUCTOR")){
+        if (courseInviteToken.getRole().equals("INSTRUCTOR")) {
             //add instructor to course
             List<String> instructorIds = course.getInstructorIds();
             instructorIds.add(courseInviteToken.getEmail());
@@ -99,12 +102,14 @@ public class CourseController {
 
             courseInviteTokenRepository.delete(courseInviteToken); //clear token
             return true;
-        }
-        if (courseInviteToken.getRole().equals("STUDENT")){
+        } else if (courseInviteToken.getRole().equals("STUDENT")) {
+
+            System.out.println("Course before: " + course);
             //add instructor to course
             List<String> studentIds = course.getStudentIds();
             studentIds.add(courseInviteToken.getEmail());
-            course.setInstructorIds(studentIds);
+            course.setStudentIds(studentIds);
+            System.out.println("Course after: " + course);
             courseRepository.save(course);  //update
             log.info("ADDED STUDENT TO COURSE");
 
@@ -133,7 +138,7 @@ public class CourseController {
             return null;
         }
         Session session = optionalSession.get();
-        Course course = getCourse(courseId);
+        Course course = courseRepository.findById(courseId).get();
         if (course == null) {
             log.info("Failed to check member: Course does not exist.");
             return null;
@@ -150,9 +155,20 @@ public class CourseController {
         return null;
     }
 
-    @GetMapping("{courseId}")
-    public Course getCourse(@PathVariable("courseId") String courseId) {
-        return this.courseRepository.findById(courseId).orElse(null);
+    @PostMapping("{courseId}/get")
+    public Course getCourse(@PathVariable("courseId") String courseId, @RequestBody Session session) {
+        if (session == null || session.getSessionId() == null) {
+            log.info("Failed to get course: Invalid session.");
+            return null;
+        }
+        //if the user of the session is involved in the course
+        if (checkMember(courseId, session.getSessionId()) != null) {
+            Course course = this.courseRepository.findById(courseId).get();  //null already checked by check member
+            log.info("RETURNING COURSE: " + course);
+            return course;
+        }
+        log.info("User is not involved in the course.");
+        return null;
     }
 
     @GetMapping("all")
@@ -173,22 +189,27 @@ public class CourseController {
         if (course.getName() == null ||
                 course.getDescription() == null ||
                 course.getInstructorIds() == null || course.getStudentIds() == null ||
-                course.getQuestionRootIds() == null) {
+                course.getQuestionRootList() == null) {
             log.info("Failed to create course: Arguments supplied contains null (other than courseId).");
             return null;
         }
+
         if (course.getName().length() == 0 || course.getDescription().length() == 0 ||
                 course.getInstructorIds().size() == 0) {
             log.info("Failed to create course: Argument name, desc, or instructorIds is of length 0 or empty.");
             return null;
         }
-        if (course.getStudentIds().size() != 0 || course.getQuestionRootIds().size() != 0) {
-            log.info("Failed to create course: Argument studentIds or questionRootIds is not empty on course initialization.");
+        if (course.getQuestionRootList().size() != 0) {
+            log.info("Failed to create course: Argument questionRootIds is non empty on course initialization.");
             return null;
         }
 
-        if (course.getInstructorIds().size() != 1) {
-            log.info("Failed to create course: Argument instructorIds is not 1.");
+        //Make sure the ids don't overlap, i.e. instructor email can't also be in student's list
+        Set<String> instructorIdsSet = new HashSet<>(course.getInstructorIds());
+        Set<String> studentIdsSet = new HashSet<>(course.getStudentIds());
+        instructorIdsSet.retainAll(studentIdsSet);
+        if (!instructorIdsSet.isEmpty()) {
+            log.info("Failed to create course: The instructor and student emails overlap.");
             return null;
         }
 
@@ -197,27 +218,34 @@ public class CourseController {
             log.info("Failed to create course: Session is invalid.");
             return null;
         }
+
         Optional<Instructor> instructorOptional = instructorRepository.findById(s.get().getEmail());
         if (!instructorOptional.isPresent()) {
             log.info("Failed to create course: User does not exist.");
             return null;
         }
-        Instructor instructor = instructorOptional.get();
-
+        //set course id
         course.setId(StringTools.generateID(32));
 
+        //update instructor creator courseinstructed
+        Instructor instructor = instructorOptional.get();
         List<String> courseInstructedIds = instructor.getCourseInstructedIds();
         courseInstructedIds.add(course.getId());
         instructor.setCourseInstructedIds(courseInstructedIds);
-        userRepository.save(instructor);  //update instructor
-        instructorRepository.save(instructor);
+        userRepository.save(instructor);
+        instructorRepository.save(instructor);  //update instructor, necessary?
         log.info("COURSE INSTRUCTED ADDED TO : " + instructor);
 
         //AFTER COURSE CREATED, SEND INVITATION
         Map<String, CourseInviteToken> emailTokenMap = new HashMap<>();
 
+        //but remove self (the creator instructor) first
+        List<String> instructorIdList = course.getInstructorIds();
+        instructorIdList.remove(course.getCreatorInstructorId());
+        course.setInstructorIds(instructorIdList);
+
         //to Instructor
-        for (String email: course.getInstructorIds()) {
+        for (String email : course.getInstructorIds()) {
             //Create and save token
             CourseInviteToken token = new CourseInviteToken();
             token.setCourseId(course.getId());
@@ -229,7 +257,7 @@ public class CourseController {
         }
 
         //to Student
-        for (String email: course.getStudentIds()) {
+        for (String email : course.getStudentIds()) {
             //Create and save token
             CourseInviteToken token = new CourseInviteToken();
             token.setCourseId(course.getId());
@@ -243,12 +271,11 @@ public class CourseController {
         //send email token
         emailServices.sendCourseInviteToken(emailTokenMap, course.getName());
 
-
         //edit the instructor, student, then save course
         List<String> instructorIds = new ArrayList<>();
         instructorIds.add(course.getCreatorInstructorId());    //only add the the creator instructor, since no creator accepted invitation yet
         course.setInstructorIds(instructorIds);
-        course.setStudentIds(null);                            //since no student accepted invitation yet
+        course.setStudentIds(new ArrayList<>());                            //since no student accepted invitation yet
         courseRepository.save(course);
         log.info("COURSE CREATED: " + course);
         return course;

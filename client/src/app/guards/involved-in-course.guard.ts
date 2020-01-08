@@ -20,7 +20,7 @@ export class InvolvedInCourseGuard implements CanActivate, CanActivateChild {
   canActivate(
     next: ActivatedRouteSnapshot,
     state: RouterStateSnapshot): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
-    let courseId: string = next.url[next.url.length - 2].toString();
+    let courseId: string = next.url[next.url.length - 1].toString();
 
     //check if the email from session id is a student or an instructor
     return new Promise((resolve) => {

@@ -5,6 +5,7 @@ import lombok.EqualsAndHashCode;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.OneToMany;
 import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
@@ -16,9 +17,17 @@ public class QuestionRoot extends Post {
     @ElementCollection()
     private List<String> viewerIds;
 
-    @ElementCollection()
-    private List<String> questionRootAnswerIds;
+    @OneToMany
+    private List<QuestionRootAnswer> questionRootAnswerList;
 
-    @ElementCollection()
-    private List<String> followupQuestionIds;
+    @OneToMany
+    private List<FollowupQuestion> followupQuestionList;
+
+
+//    @ElementCollection()
+//    private List<String> questionRootAnswerIds;
+//
+//    @ElementCollection()
+//    private List<String> followupQuestionIds;
+
 }

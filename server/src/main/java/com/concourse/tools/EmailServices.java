@@ -38,6 +38,11 @@ public class EmailServices {
     }
 
     public Session getSession() {
+        if (GMAIL_USERNAME.equals("") || GMAIL_PASSWORD.equals("")){
+            log.error("GMAIL IS NOT CONFIGURED. PLEASE FILL THE FIELDS IN src/main/resources/keys.properties.");
+            System.exit(1);
+        }
+
         Properties prop = new Properties();
         prop.put("mail.smtp.host", "smtp.gmail.com");
         prop.put("mail.smtp.port", "587");
@@ -96,7 +101,7 @@ public class EmailServices {
         for (Map.Entry<String, CourseInviteToken> entry : emailTokenMap.entrySet()){
 
             String content = String.format(
-                    "<p>Hi! You're invited to join course %s as %s. <a href=\"%s\">Register</a> or <a href=\"%s\">Login</a> to Concourse, then go to <a href=\"%s\">Join" +
+                    "<p>Hi! You're invited to join course %s as %s. <a href=\"%s\">Register</a> (as <b>%s</b>) or <a href=\"%s\">Login</a> to Concourse, then go to <a href=\"%s\">Join" +
                             " Course</a> Page</p>" +
                             "  <p>Enter the following code: </p>" +
                             "  <ul>" +
@@ -108,7 +113,8 @@ public class EmailServices {
                             "    </li>" +
                             "  </ul>"
                     ,
-                    courseName, entry.getValue().getRole().toLowerCase(), loginLink, registerLink,
+                    courseName, entry.getValue().getRole().toLowerCase(), registerLink,
+                    entry.getValue().getRole().toLowerCase(), loginLink,
                     joinCourseLink, entry.getValue().getCourseId(), entry.getValue().getInviteId());
             try {
                 InternetAddress recipientAddress = new InternetAddress(entry.getKey());
