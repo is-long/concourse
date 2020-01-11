@@ -1,6 +1,6 @@
 <div class="container">
   <br>
-  <h3 class="text-center">Hi, <b> {{ email }}</b> <p class="text-danger"><b>[{{user.role}}]</b></p></h3>
+  <h3 class="text-center">Hi, <b> {{ email }}</b> <p class="text-danger"><b>[{{role}}]</b></p></h3>
   <h5>Actions</h5>
   <button class="btn btn-primary" *ngIf="isInstructor" routerLink="/course/create" style="margin-right: 5px">Create Course</button>
   <button class="btn btn-primary" routerLink="/course/join">Join a Course</button>

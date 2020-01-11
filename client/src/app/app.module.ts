@@ -19,6 +19,9 @@ import {FontAwesomeModule} from "@fortawesome/angular-fontawesome";
 import { CreatePostComponent } from './course/post/create-post/create-post.component';
 import { ProfileComponent } from './profile/profile.component';
 import { PostHomeComponent } from './course/post/post-home/post-home.component';
+import {EditorModule} from "@tinymce/tinymce-angular";
+import { EditorComponent } from './course/post/editor/editor.component';
+import { CourseSettingsComponent } from './course/course-settings/course-settings.component';
 
 @NgModule({
   declarations: [
@@ -36,15 +39,20 @@ import { PostHomeComponent } from './course/post/post-home/post-home.component';
     CreatePostComponent,
     ProfileComponent,
     PostHomeComponent,
+    EditorComponent,
+    CourseSettingsComponent,
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
     HttpClientModule,
+    EditorModule,
     FormsModule,
     FontAwesomeModule
   ],
   providers: [],
   bootstrap: [AppComponent]
 })
-export class AppModule { }
+export class AppModule {
+
+}

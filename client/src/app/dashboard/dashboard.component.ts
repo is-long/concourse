@@ -14,6 +14,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   email;
   user: any;
+  role: string;
   isInstructor: boolean;
   courses: Course[] = [];
 
@@ -27,6 +28,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         //if an instructor, get all the courseInstructed
         if (data.role === "INSTRUCTOR") {
           this.isInstructor = true;
+          this.role = "INSTRUCTOR";
           let courseInstructedIds: string[] = data['courseInstructedIds'];
           if (courseInstructedIds != undefined && courseInstructedIds.length != 0) {
             for (let courseId of courseInstructedIds) {
@@ -43,6 +45,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
         //else is a student, get all the courseEnrolled
         else {
           this.isInstructor = false;
+          this.role = "STUDENT";
+          let courseInstructedIds: string[] = data['courseInstructedIds'];
           let courseEnrolledIds: string[] = data['courseEnrolledIds'];
           if (courseEnrolledIds != undefined && courseEnrolledIds.length != 0) {
             for (let courseId of courseEnrolledIds) {

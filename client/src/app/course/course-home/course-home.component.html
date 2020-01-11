@@ -1,30 +1,281 @@
-<div class="container">
+<div class="container " xmlns="http://www.w3.org/1999/html">
   <br>
-  <h3 class="text-center">Welcome to {{course.name}}</h3>
   <br>
-  <div class="container">
-    <div class="row">
-      <button class="btn btn-outline-success" style="margin-right: 5px" routerLink="post/new">New Post</button>
-      <button class="btn btn-outline-primary " style="margin-right: 5px">Search</button>
-      <button class="btn btn-outline-danger" style="margin-right: 5px">Filter</button>
-    </div>
+  <div class="row text-center">
+    <h3 class="text-center">Welcome to {{name}}</h3>
+  </div>
+  <br>
+  <div class="row">
+    <button class="btn btn-outline-success" style="margin-right: 5px" routerLink="post/new">New Post</button>
+    <button class="btn btn-outline-info" style="margin-right: 5px" (click)="showSearch = !showSearch">Search</button>
+    <button class="btn btn-outline-dark" style="margin-right: 5px" (click)="showFilter = !showFilter">Filter</button>
+    <button class="btn btn-warning" style="margin-right: 5px" routerLink="settings">View</button>
+    <button class="btn btn-danger" style="margin-right: 5px" routerLink="settings">Settings</button>
     <br>
-    <i class="fas fa-bars"></i>
-    <div class="row" >
-      <div class="col-1 " style="float:none; margin: 0 auto; background-color: red">
-        <div class="row">
-          <fa-icon [icon]="faArrowUp"></fa-icon>
+  </div>
+</div>
+
+<div class="container" *ngIf="showSearch || showFilter">
+  <br>
+  <div class="row" *ngIf="showSearch">
+    <div class="column">
+      <h5>Search post with...</h5>
+      <p class="text-secondary">(separate word/phrase by comma)</p>
+
+      <div class="row">
+        <div class="col-6">
+          <p style="text-align: left">all these words</p>
         </div>
-        <div class="row">
-          <fa-icon [icon]="faArrowDown"></fa-icon>
+        <div class="col ">
+          <div class="form-inline">
+            <input type="text" id="containsAll" placeholder=" e.g. final, recitation"
+                   style="box-sizing: border-box; width: 100%" name="containsAllString"
+                   [(ngModel)]="containsAllString">
+          </div>
         </div>
       </div>
-      <div class="col-10" style="background-color: blue">
-        Hello World
+
+      <div class="row">
+        <div class="col-6">
+          <p style="text-align: left">this exact word or phrase</p>
+        </div>
+        <div class="col">
+          <input type="text" id="containsExact" placeholder=" e.g. 0x00, hello world"
+                 style="box-sizing: border-box; width: 100%"
+                 name="containsExactString" [(ngModel)]="containsExactString">
+        </div>
       </div>
-      <div class="col" style="background-color: red">
-        Hello World
+
+      <div class="row">
+        <div class="col-6">
+          <p style="text-align: left">any of these words</p>
+        </div>
+        <div class="col">
+          <input type="text" id="containsAny" placeholder=" e.g. final, recitation"
+                 style="box-sizing: border-box; width: 100%"
+                 name="containsAnyString" [(ngModel)]="containsAnyString">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-6">
+          <p style="text-align: left">none of these words</p>
+        </div>
+        <div class="col">
+          <input type="text" id="containsNone" placeholder=" e.g. midterm, intro"
+                 style="box-sizing: border-box; width: 100%"
+                 name="containsNoneString" p [(ngModel)]="containsNoneString"
+          >
+        </div>
+      </div>
+      <br>
+    </div>
+  </div>
+
+  <div class="row" *ngIf="showFilter">
+    <div class="container">
+      <div class="column">
+        <div class="row">
+          <h5>Filter posts by...</h5>
+        </div>
+        <br>
+
+
+        <div class="row">
+          <p style="text-align: left"><b>Tags</b></p>
+        </div>
+        <div class="row">
+          <div style="margin-right: 10px">
+            <input type="checkbox" name="filterTags" style="margin-right: 5px;margin-bottom: 5px"
+                   class="btn btn-secondary"
+                   value="all" checked> All (default)
+          </div>
+        </div>
+        <div class="row">
+          <div style="margin-right: 10px">
+            <input type="checkbox" name="filterTags" style="margin-right: 5px;margin-bottom: 5px"
+                   class="btn btn-secondary"
+                   value="unread">
+            Unread
+          </div>
+        </div>
+        <div class="row">
+          <div style="margin-right: 10px">
+            <input type="checkbox" name="filterTags" style="margin-right: 5px;margin-bottom: 5px"
+                   class="btn btn-secondary"
+                   value="hasunresolvedfollowups"> Has
+            unresolved followups
+          </div>
+        </div>
+        <div class="row">
+          <div style="margin-right: 10px">
+            <input type="checkbox" name="filterTags" style="margin-right: 5px;margin-bottom: 5px"
+                   class="btn btn-secondary"
+                   value="hasinstructoranswer"> Has
+            instructor answer
+          </div>
+        </div>
+        <div class="row">
+          <div style="margin-right: 10px">
+            <input type="checkbox" name="filterTags" style="margin-right: 5px;margin-bottom: 5px"
+                   class="btn btn-secondary"
+                   value="noinstructoranswer"> No
+            instructor answer
+          </div>
+        </div>
+        <div class="row">
+          <div style="margin-right: 10px">
+            <input type="checkbox" name="filterTags" style="margin-right: 5px;margin-bottom: 5px"
+                   class="btn btn-secondary"
+                   value="noansweratall"> No
+            answer at all
+          </div>
+        </div>
+        <br>
+
+        <div class="row">
+          <p style="text-align: left"><b>Folders</b></p>
+        </div>
+        <div class="row">
+          <div style="margin-right: 5px">
+            <input type="checkbox" style="margin-right: 5px;margin-bottom: 5px" class="btn btn-secondary" checked
+                   name="filterFolders" value="all">All
+            folders
+          </div>
+          <div *ngFor="let folderName of course.folders" style="margin-right: 5px">
+            <input type="checkbox" style="margin-right: 5px;margin-bottom: 5px" class="btn btn-secondary"
+                   name="filterFolders" value="{{folderName}}">{{folderName}}
+          </div>
+        </div>
+
+        <br>
+
+        <div class="row">
+          <p style="text-align: left"><b>Date</b></p>
+        </div>
+        <div class="row">
+          <div style="margin-right: 10px">
+            <input type="checkbox" style="margin-right: 5px;margin-bottom: 5px" class="btn btn-secondary" checked
+            name="filterDate" value="all"> All
+            time
+          </div>
+          <div style="margin-right: 10px">
+            <input type="checkbox" style="margin-right: 5px;margin-bottom: 5px" class="btn btn-secondary"
+                   name="filterDate" value="today"> Today
+          </div>
+          <div style="margin-right: 10px">
+            <input type="checkbox" style="margin-right: 5px;margin-bottom: 5px" class="btn btn-secondary"
+                   name="filterDate" value="last3days"> Last 3 days
+          </div>
+          <div style="margin-right: 10px">
+            <input type="checkbox" style="margin-right: 5px;margin-bottom: 5px" class="btn btn-secondary"
+                   name="filterDate" value="last7days"> Last 7 days
+          </div>
+          <div style="margin-right: 10px">
+            <input type="checkbox" style="margin-right: 5px;margin-bottom: 5px" class="btn btn-secondary"
+                   name="filterDate" value="last2weeks"> Last 2 weeks
+          </div>
+          <div style="margin-right: 10px">
+            <input type="checkbox" style="margin-right: 5px;margin-bottom: 5px" class="btn btn-secondary"
+                   name="filterDate" value="lastmonth"> Last month
+          </div>
+        </div>
+        <br>
+
+
+        <div class="row">
+          <p style="text-align: left"><b>Author</b></p>
+        </div>
+        <div class="row">
+          <div style="margin-right: 10px">
+            <input type="radio" name="filterAuthor" style="margin-right: 5px;margin-bottom: 5px"
+                   class="btn btn-secondary" checked (click)="selectAuthor('all')"> All authors
+          </div>
+        </div>
+        <div class="row">
+          <div style="margin-right: 10px">
+            <input type="radio" name="filterAuthor" style="margin-right: 5px;margin-bottom: 5px"
+                   class="btn btn-secondary" (click)="selectAuthor('instructorsOnly')"> Instructors only
+          </div>
+        </div>
+        <div class="row">
+          <div style="margin-right: 10px">
+            <input type="radio" name="filterAuthor" style="margin-right: 5px;margin-bottom: 5px"
+                   class="btn btn-secondary" (click)="selectAuthor('studentsOnly')"> Students only
+          </div>
+        </div>
+        <div class="row">
+          <div style="margin-right: 10px">
+            <input type="radio" name="filterAuthor" style="margin-right: 5px;margin-bottom: 5px"
+                   class="btn btn-secondary" (click)="selectAuthor('authorName')"> Author's name contains
+          </div>
+          <input type="text" id="authorNameContains">
+        </div>
+        <br>
+      </div>
+    </div>
+  </div>
+  <br>
+
+
+  <div class="row" *ngIf="showFilter || showSearch">
+    <button *ngIf="isQuerying" class="btn btn-outline-danger" style="margin-right: 5px" (click)="clearQuery()">Clear
+      query
+    </button>
+    <button class="btn btn-primary" (click)="query()">Submit</button>
+  </div>
+</div>
+
+<br>
+<br>
+
+
+
+
+
+
+
+
+
+<div class="container" *ngFor="let questionRoot of course.questionRootList">
+  <div class="row" style="border-top: solid 1pt lightgrey;padding-top: 2%">
+    <div class="col-xs-2 align-self-center" style="text-align: right;">
+      <p *ngIf="questionRoot.likeCount != 0"><b>{{questionRoot.likeCount}}</b> pts</p>
+      <p>
+        <fa-icon [icon]="faEye"></fa-icon>&nbsp;&nbsp;{{questionRoot.viewCount}}
+      <p>
+        <fa-icon [icon]="faCommentAlt"></fa-icon>&nbsp;&nbsp;{{qrIdqraCountMap.get(questionRoot.id)}}
+      <p>
+        <fa-icon [icon]="faCommentMedical"></fa-icon>&nbsp;&nbsp;{{qrIdfqCountMap.get(questionRoot.id)}}
+      </p>
+    </div>
+    <div class="col" [routerLink]="'/course/' + questionRoot.courseId + '/post/' + questionRoot.id">
+      <div class="container">
+        <div class="row">
+          <h5><b> {{questionRoot.title}}</b></h5>
+        </div>
+        <div class="row" [innerHTML]="questionRoot.content">
+        </div>
+
+        <div class="row">
+          <div *ngIf="questionRoot.authorType == 'INSTRUCTOR'" class="btn-sm btn-danger" style="margin-right: 5px">
+            INSTRUCTOR POST
+          </div>
+          <div *ngIf="questionRoot.folder != null" class="btn-sm btn-secondary"
+               style="margin-right: 5px">{{questionRoot.folder}}</div>
+          <p>{{questionRoothasInstructorAnswerMap[questionRoot.id]}}</p>
+          <div *ngIf="questionRoot.hasInstructorAnswer && questionRoot.authorType != 'INSTRUCTOR'"
+               class="btn-sm btn-success" style="margin-right: 5px">Has Instructor Answer
+          </div>
+          <div *ngIf="!questionRoot.hasInstructorAnswer && questionRoot.authorType != 'INSTRUCTOR'"
+               class="btn-sm btn-warning" style="margin-right: 5px">No Instructor Answer
+          </div>
+        </div>
+        <br>
       </div>
     </div>
   </div>
 </div>
+<br>
+<br>
+

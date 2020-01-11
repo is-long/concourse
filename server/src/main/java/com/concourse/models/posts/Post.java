@@ -1,8 +1,11 @@
 package com.concourse.models.posts;
 
+import com.concourse.models.users.User;
+import com.concourse.tools.StringTools;
 import lombok.Data;
 
 import javax.persistence.*;
+import java.util.*;
 
 @Data
 @Entity
@@ -10,10 +13,17 @@ import javax.persistence.*;
 public class Post {
 
     @Id
-    private String id;
+    private String id = StringTools.generateID(32);
+    private Long postDate = new Date().getTime();
+
+
+    private Integer likeCount = 0;
+
+    @ElementCollection
+    private Map<String, Integer> likesUserIDMap = new HashMap<>();
+
+
     private String courseId;
-    private Long postDate;
-    private Integer likeCount;
 
     @Lob
     private String content;
@@ -21,4 +31,34 @@ public class Post {
     private String authorUserId;
     private String authorName;
     private String authorType;
+
+    public void setAuthor(User user) {
+        this.authorUserId = user.getEmail();
+        this.authorName = user.getName();
+        this.authorType = user.getRole();
+    }
+
+    public Post() {
+    }
+
+    public Post(String courseId, String content, User author) {
+        this.courseId = courseId;
+        this.content = content;
+        setAuthor(author);
+    }
+
+    public void like(String userId, int value) {
+        if (value != 0){
+            likesUserIDMap.put(userId, value);
+        } else {
+            likesUserIDMap.remove(userId);
+        }
+
+        //update likecount
+        int sum = 0;
+        for (int i: likesUserIDMap.values()) {
+            sum += i;
+        }
+        likeCount = sum;
+    }
 }

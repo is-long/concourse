@@ -9,7 +9,7 @@ export class Course{
   instructorIds: string[];
   studentIds: string[];
 
-  questionRootList: QuestionRoot[];
-  // questionRootIds: string[];
+  folders: string[];
 
+  questionRootList: QuestionRoot[];
 }

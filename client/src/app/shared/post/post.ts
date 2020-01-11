@@ -4,9 +4,11 @@ export class Post {
 
   postDate: number;
   content: string;
-  likeCount: number;
+  likeCount: number = 0;
 
   authorUserId: string;
   authorName: string;
   authorType: string;
+
+  likesUserIDMap: Map<string, number> = new Map();
 }

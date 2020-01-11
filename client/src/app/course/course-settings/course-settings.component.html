@@ -1,0 +1,81 @@
+<div class="container">
+  <br>
+  <h1>Course settings</h1>
+  <div class="row">
+    <div class="col">
+      <br>
+      <label for="inviteStudents">Invite additional students</label><br>
+      <textarea name="inviteStudents" id="inviteStudents" style="width: 100%" rows="3"
+                placeholder="Enter students email, separated by comma"></textarea>
+      <br>
+      <button class="btn btn-primary">Invite</button>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col">
+      <br>
+      <label for="inviteInstructor">Invite additional instructor</label><br>
+      <textarea name="inviteInstructor" id="inviteInstructor" style="width: 100%" rows="3"
+                placeholder="Enter students email, separated by comma"></textarea>
+      <br>
+      <button class="btn btn-primary">Invite</button>
+    </div>
+  </div>
+
+
+  <div class="row">
+    <div class="col">
+      <br>
+      <p>Currently Available Folders: </p>
+      <div class="row">
+        <div class="col">
+          <button disabled style="margin-right: 5px; margin-top: 5px" class="btn btn-secondary" *ngFor="let folderName of folders">{{folderName}}</button>
+        </div>
+      </div>
+      <br>
+
+      <label for="postFolders">Add Question Folders</label><br>
+      <textarea name="postFolders" id="postFolders" style="width: 100%" rows="3" [(ngModel)]="newFolderString"
+                name="newFolderString"></textarea>
+      <br>
+      <button class="btn btn-primary" (click)="addFolders()">Add Folder</button>
+      <br>
+      <br>
+    </div>
+  </div>
+</div>
+
+<br><br>
+
+<div class="container" style="border: solid 1pt red;">
+  <br>
+  <h1 class="text-danger">Danger Zone</h1>
+  <div class="row" style=" padding: 2% 0 2% 0;">
+    <div class="col text-danger">
+      <label for="removeStudent">Remove students</label><br>
+      <textarea name="removeStudent" id="removeStudent" style="width: 100%" rows="3"
+                placeholder="Enter comma-separated student emails"></textarea>
+      <br>
+      <button class="btn btn-danger">Remove</button>
+    </div>
+  </div>
+
+  <div class="row" style=" padding: 2% 0 2% 0;">
+    <div class="col text-danger">
+      <label for="removeInstructor">Remove instructors</label><br>
+      <textarea name="removeInstructor" id="removeInstructor" style="width: 100%" rows="3"
+                placeholder="Enter comma-separated instructor emails"></textarea>
+      <br>
+      <button class="btn btn-danger">Remove</button>
+    </div>
+  </div>
+  <br>
+
+  <div class="row" style=" padding: 2% 0 2% 0;">
+    <div class="col">
+      <button class="btn btn-danger">Delete Course</button>
+    </div>
+  </div>
+</div>
+<br>

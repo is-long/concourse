@@ -3,9 +3,12 @@ import {QuestionRootAnswer} from "./question-root-answer";
 import {FollowupQuestion} from "./followup-question";
 
 export class QuestionRoot extends Post {
-  viewCount: number;
-  viewerIds: [];
+  title: string = "";
+  viewCount: number = 0;
+  viewerIds: string[] = [];
+  folder: string;
+  hasInstructorAnswer: boolean = false;
 
-  questionRootAnswerList: QuestionRootAnswer[];
-  followupQuestionList: FollowupQuestion[];
+  questionRootAnswerList: QuestionRootAnswer[] = [];
+  followupQuestionList: FollowupQuestion[]= [];
 }
