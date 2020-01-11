@@ -1,1 +1,1 @@
-Concourse Project for MOSA Hackathon Winter 2020
+Concourse Project for Penn Winter Hackathon 2020
