@@ -366,10 +366,8 @@
                 </button>
 
                 <div class="dropdown-menu" aria-labelledby="dropdownSortButton">
-                  <a class="dropdown-item" (click)="markGood(fa.id, 'FOLLOWUPANSWER')"
-                     *ngIf="user.role === 'INSTRUCTOR' && fa.authorType != 'INSTRUCTOR'">Mark Good</a>
                   <!-- Only if the post is user's-->
-                  <a class="dropdown-item" (click)="editAnswer(fa.id, 'FOLLOWUPANSWER')"
+                  <a class="dropdown-item" (click)="editAnswer(fa.id)"
                      *ngIf="user.email === fq.authorUserId">Edit</a>
                   <a class="dropdown-item" (click)="deletePost(fa.id, 'FOLLOWUPANSWER')"
                      *ngIf="user.role === 'INSTRUCTOR' || user.email === fa.authorUserId">Delete</a>

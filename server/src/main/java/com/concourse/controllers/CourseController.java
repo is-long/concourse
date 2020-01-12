@@ -66,25 +66,30 @@ public class CourseController {
     //ACCESS COURSE
     //============================================================================
 
+    @GetMapping("all")
+    public List<Course> getAll(){
+        return (List<Course>)courseRepository.findAll();
+    }
+
     @PostMapping("{courseId}/get")
     public Course getCourse(@PathVariable("courseId") String courseId, @RequestBody Session session) {
         if (session == null || session.getSessionId() == null) {
             log.info("Failed to get course: Invalid session.");
             return null;
         }
+
         //if the user of the session is involved in the course
         if (checkMember(courseId, session.getSessionId()) != null) {
-            Course course = this.courseRepository.findById(courseId).get();  //null already checked by check member
-            log.info("RETURNING COURSE: " + course);
-            return course;
+            Optional<Course> optionalCourse =  this.courseRepository.findById(courseId);  //null already checked by check member
+            if (optionalCourse.isPresent()){
+                Course c = optionalCourse.get();
+                log.info("FETCH COURSE: " + c);
+                return c;
+            }
         }
+
         log.info("User is not involved in the course.");
         return null;
-    }
-
-    @GetMapping("all")
-    public List<Course> getAllCourse() {
-        return (List<Course>) this.courseRepository.findAll();
     }
 
     @PostMapping("{courseId}/getfolders")
@@ -451,7 +456,7 @@ public class CourseController {
         questionRoot.setViewerIds(new ArrayList<>());
         questionRoot.setFollowupQuestionList(new ArrayList<>());
         questionRoot.setQuestionRootAnswerList(new ArrayList<>());
-        questionRoot.setHasInstructorAnswer();
+//        questionRoot.setHasInstructorAnswer();
 
         questionRootRepository.save(questionRoot);
         courseRepository.saveQuestionRootToCourse(courseId, questionRoot);
@@ -512,9 +517,6 @@ public class CourseController {
         //add to parent, then save parent
         QuestionRoot questionRoot = optionalQuestionRoot.get();
         questionRoot.addQuestionRootAnswer(questionRootAnswer);
-        if (questionRootAnswer.getAuthorType().equals("INSTRUCTOR")) {
-            questionRoot.setHasInstructorAnswer(true);
-        }
         questionRootRepository.save(questionRoot);
 
         //save to course
@@ -747,22 +749,30 @@ public class CourseController {
             log.info("Failed to add view: Invalid arguments");
             return false;
         }
+
         //check user is involved in course
         if (checkMember(courseId, sessionId) == null) {
             log.info("Failed to add view: Invalid session or user is not in the course");
             return false;
         }
 
-        Optional<QuestionRoot> optionalQuestionRoot = questionRootRepository.findById(postId);
-        if (!optionalQuestionRoot.isPresent()) {
-            log.info("Failed to add view: Question root not found");
-            return false;
-        }
-        QuestionRoot qr = optionalQuestionRoot.get();
-        qr.addViewerId(session.getEmail());
-        postRepository.save(qr);
+        try {
+            Optional<QuestionRoot> optionalQuestionRoot = questionRootRepository.findById(postId);
+            log.info("IN VIEW 4, OQR" + optionalQuestionRoot);
+            if (!optionalQuestionRoot.isPresent()) {
+                log.info("Failed to add view: Question root not found");
+                return false;
+            }
+            log.info("IN VIEW 5, OQR is present");
+            QuestionRoot qr = optionalQuestionRoot.get();
+            qr.addViewerId(session.getEmail());
+            questionRootRepository.save(qr);
 
-        return false;
+            return true;
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+        return true;
     }
 
     @PostMapping("{courseId}/post/{postId}/like")

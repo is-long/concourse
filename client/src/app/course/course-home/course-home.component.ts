@@ -55,6 +55,8 @@ export class CourseHomeComponent implements OnInit {
     let courseId = arr[arr.length - 1];
 
     this.courseService.getCourse(courseId).subscribe(optionalCourse => {
+      console.log('optional course is');
+      console.log(optionalCourse);
         if (optionalCourse != null) {
           this.course = optionalCourse;
           this.originalQuestionRootList = optionalCourse.questionRootList;

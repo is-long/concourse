@@ -36,6 +36,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
             for (let courseId of courseInstructedIds) {
               this.courseService.getCourse(courseId).subscribe(
                 course => {
+                  console.log('course is ');
+                  console.log(course);
                   if (course != null) {
                     this.courses.push(<Course>course)
                   }
@@ -48,7 +50,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
         else {
           this.isInstructor = false;
           this.role = "STUDENT";
-          let courseInstructedIds: string[] = data['courseInstructedIds'];
           let courseEnrolledIds: string[] = data['courseEnrolledIds'];
           if (courseEnrolledIds != undefined && courseEnrolledIds.length != 0) {
             for (let courseId of courseEnrolledIds) {

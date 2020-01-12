@@ -7,7 +7,6 @@ export class QuestionRoot extends Post {
   viewCount: number = 0;
   viewerIds: string[] = [];
   folder: string;
-  hasInstructorAnswer: boolean = false;
 
   questionRootAnswerList: QuestionRootAnswer[] = [];
   followupQuestionList: FollowupQuestion[]= [];

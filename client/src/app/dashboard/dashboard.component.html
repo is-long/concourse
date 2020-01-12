@@ -10,7 +10,7 @@
   <div class="container align-items-center">
     <div class="row">
       <div *ngFor="let course of courses" class="column" style="margin-right: 1%">
-        <div class="card bg-light mb-3" style="max-width: 18rem;">
+        <div *ngIf="course != undefined" class="card bg-light mb-3" style="max-width: 18rem;">
           <div class="card-header" [textContent]="course.name"><b></b></div>
           <div class="card-body">
             <div >

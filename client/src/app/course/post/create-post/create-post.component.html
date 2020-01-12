@@ -5,8 +5,8 @@
     <label for="title">Title *</label><br>
     <input style="width: 100%" type="text" id="title" name="title" [(ngModel)]="title">
     <br><br>
-    <p *ngIf="folders.length != 0">Folders *</p>
-    <p *ngIf="folders.length === 0"><b>No folders found </b><i style="color: gray">(Let the instructor add them in the course settings)</i></p>
+    <p *ngIf="folders != undefined && folders.length != 0">Folders *</p>
+    <p *ngIf="folders != undefined &&  folders.length === 0"><b>No folders found </b><i style="color: gray">(Let the instructor add them in the course settings)</i></p>
     <div class="row">
       <div class="col">
         <label *ngFor="let folderName of folders" [for]="'folder-' + folderName" >
