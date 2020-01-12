@@ -13,7 +13,6 @@ import {InvolvedInCourseGuard} from "./guards/involved-in-course.guard";
 import {RegisterComponent} from "./authentication/register/register.component";
 import {RegisterConfirmComponent} from "./authentication/register/register-confirm/register-confirm.component";
 import {JoinCourseComponent} from "./course/join-course/join-course.component";
-import {ProfileComponent} from "./profile/profile.component";
 import {PostHomeComponent} from "./course/post/post-home/post-home.component";
 import {CreatePostComponent} from "./course/post/create-post/create-post.component";
 import {CourseService} from "./services/course.service";
@@ -33,11 +32,6 @@ const routes: Routes = [
     path: 'dashboard',
     canActivate: [LoggedInGuard],
     pathMatch: 'full', component: DashboardComponent
-  },
-  {
-    path: 'profile',
-    canActivate: [LoggedInGuard],
-    pathMatch: 'full', component: ProfileComponent
   },
   {
     path: 'logout',

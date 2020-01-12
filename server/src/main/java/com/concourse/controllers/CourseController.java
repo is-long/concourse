@@ -1,7 +1,7 @@
 package com.concourse.controllers;
 
 import com.concourse.models.Course;
-import com.concourse.models.CourseInviteToken;
+import com.concourse.models.tokens.CourseInviteToken;
 import com.concourse.models.Session;
 import com.concourse.models.posts.*;
 import com.concourse.models.users.Instructor;
@@ -13,9 +13,8 @@ import com.concourse.tools.StringTools;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
-import java.nio.file.CopyOption;
+import javax.transaction.Transactional;
 import java.util.*;
-import java.util.stream.Collectors;
 
 
 /*
@@ -357,7 +356,8 @@ public class CourseController {
     }
 
 
-    @PostMapping("delete/{courseId}")
+    @PostMapping("{courseId}/delete/course")
+    @Transactional
     public boolean deleteCourse(@PathVariable("courseId") String courseId, @RequestBody Session session) {
         if (!sessionController.validate(session)) {
             log.info("Failed to delete course : Invalid session");
@@ -371,9 +371,10 @@ public class CourseController {
             return false;
         }
         Course course = optionalCourse.get();
-        //check user is the instructor of the course to be deleted
-        if (!course.getInstructorIds().contains(session.getEmail())) {
-            log.info("Failed to delete course : You're not the instructor for " + courseId);
+
+        //check if user is the creator of the course, the instructor of the course to be deleted
+        if (!course.getCreatorInstructorId().equals(session.getEmail())) {
+            log.info("Failed to delete course : You're not the creator of " + courseId);
             return false;
         }
 
@@ -1015,33 +1016,33 @@ public class CourseController {
             @RequestBody List<String> emails,
             @RequestParam("sessionId") String sessionId,
             @RequestParam("role") String role
-    ){
+    ) {
         //Validate is an instructor of courseId
         Optional<Session> optionalSession = sessionRepository.findById(sessionId);
-        if (!optionalSession.isPresent()){
+        if (!optionalSession.isPresent()) {
             log.info("Failed to send invitation: Invalid session");
             return false;
         }
         Optional<Course> optionalCourse = courseRepository.findById(courseId);
-        if (!optionalCourse.isPresent()){
+        if (!optionalCourse.isPresent()) {
             log.info("Failed to send invitation: Invalid course");
             return false;
         }
         Course course = optionalCourse.get();
-        if (!course.getInstructorIds().contains(optionalSession.get().getEmail())){
+        if (!course.getInstructorIds().contains(optionalSession.get().getEmail())) {
             log.info("Failed to send invitation: User not an instructor of the course");
             return false;
         }
-        if (!role.equals("INSTRUCTOR") && !role.equals("STUDENT")){
+        if (!role.equals("INSTRUCTOR") && !role.equals("STUDENT")) {
             log.info("Failed to send invitation: Invalid role");
             return false;
         }
 
         //Check if email in the list is valid
         HashMap<String, CourseInviteToken> emailTokenMap = new HashMap<>();
-        for (String email : emails){
+        for (String email : emails) {
             //if email is never registered before
-            if (!course.getInstructorIds().contains(email) && !course.getStudentIds().contains(email)){
+            if (!course.getInstructorIds().contains(email) && !course.getStudentIds().contains(email)) {
                 CourseInviteToken token = new CourseInviteToken();
                 token.setCourseId(course.getId());
                 token.setRole(role);
@@ -1055,6 +1056,64 @@ public class CourseController {
         //send email token
         emailServices.sendCourseInviteToken(emailTokenMap, course.getName());
 
+        return true;
+    }
+
+    @PostMapping("{courseId}/delete/students")
+    public boolean removeStudents(
+            @PathVariable("courseId") String courseId,
+            @RequestBody List<String> emails,
+            @RequestParam("sessionId") String sessionId) {
+        Optional<Session> optionalSession = sessionRepository.findById(sessionId);
+        if (!optionalSession.isPresent()){
+            log.info("Failed to remove students: Invalid session");
+            return false;
+        }
+        Session session = optionalSession.get();
+
+        if (emails == null || emails.size() == 0){
+            log.info("Failed to remove students: No emails found");
+            return false;
+        }
+
+        Optional<Course> optionalCourse = courseRepository.findById(courseId);
+        if (!optionalCourse.isPresent()){
+            log.info("Failed to remove students: Invalid course");
+            return false;
+        }
+        Course course = optionalCourse.get();
+        if (!course.getInstructorIds().contains(session.getEmail())){
+            log.info("Failed to remove students: Not an instructor");
+            return false;
+        }
+
+        log.info("emails:" + emails);
+        log.info("studentIds:" + emails);
+        //remove students from course list
+        List<String> studentIds = course.getStudentIds();
+        studentIds.removeAll(emails);
+        course.setStudentIds(studentIds);
+        log.info("USER REMOVED FROM COURSE: " + course);
+        courseRepository.save(course);
+
+        //remove course from student's enrolled course list
+        for (String email: emails) {
+            Optional<Student> optionalStudent = studentRepository.findById(email);
+            if (optionalStudent.isPresent()){
+                Student student = optionalStudent.get();
+                student.removeCourseEnrolledIds(courseId);
+                studentRepository.save(student);
+
+                //delete content of the posts belonging to the students
+                List<Post> studentPostsInCourse = postRepository.findPostsByAuthorUserIdAndCourseId(student.getEmail(), courseId);
+                for (Post p: studentPostsInCourse) {
+                    //p.setContent("[DELETED]");  //dont remove content
+                    p.setAuthorName("[DELETED]");
+                    p.setAuthorUserId("[DELETED]");
+                    postRepository.save(p);
+                }
+            }
+        }
         return true;
     }
 }

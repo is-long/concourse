@@ -1,6 +1,6 @@
 package com.concourse.repository;
 
-import com.concourse.models.CourseInviteToken;
+import com.concourse.models.tokens.CourseInviteToken;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 

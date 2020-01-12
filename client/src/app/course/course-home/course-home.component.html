@@ -2,7 +2,7 @@
   <br>
   <br>
   <div class="row text-center">
-    <h3 class="text-center">Welcome to {{name}}</h3>
+    <h3 class="text-center">Welcome to {{course.name}}</h3>
   </div>
   <br>
   <div class="row d-flex">
@@ -257,9 +257,11 @@
         <p>
           <fa-icon [icon]="faEye"></fa-icon>&nbsp;&nbsp;{{questionRoot.viewCount}}
         <p>
-          <fa-icon [icon]="faCommentAlt"></fa-icon>&nbsp;&nbsp;{{qrIdqraCountMap.get(questionRoot.id)}}
+          <fa-icon [icon]="faCommentAlt"></fa-icon>&nbsp;&nbsp;
+          {{questionRoot.questionRootAnswerList.length}}
         <p>
-          <fa-icon [icon]="faCommentMedical"></fa-icon>&nbsp;&nbsp;{{qrIdfqCountMap.get(questionRoot.id)}}
+          <fa-icon [icon]="faCommentMedical"></fa-icon>&nbsp;&nbsp;
+          {{questionRoot.followupQuestionList.length}}
         </p>
       </div>
       <div class="col" [routerLink]="'/course/' + questionRoot.courseId + '/post/' + questionRoot.id">
@@ -280,8 +282,7 @@
             </div>
             <div *ngIf="questionRoot.folder != null" class="btn-sm btn-secondary"
                  style="margin-right: 5px">{{questionRoot.folder}}</div>
-            <p>{{questionRoothasInstructorAnswerMap[questionRoot.id]}}</p>
-            <div *ngIf="questionRoot.hasInstructorAnswer && questionRoot.authorType != 'INSTRUCTOR'"
+            <div *ngIf="hasInstructorAnswer(questionRoot)"
                  class="btn-sm btn-success" style="margin-right: 5px">Instructor Answer
             </div>
             <div *ngIf="!questionRoot.hasInstructorAnswer && questionRoot.authorType != 'INSTRUCTOR'

@@ -13,10 +13,24 @@
         <div class="card bg-light mb-3" style="max-width: 18rem;">
           <div class="card-header" [textContent]="course.name"><b></b></div>
           <div class="card-body">
-            <h5 class="card-title"></h5>
-            <h6 class="text-danger card-text"><b>1</b> Important Announcements</h6>
-            <h6 class="text-success card-text"><b>5</b> new posts</h6>
-            <h6 class="text-success card-text"><b>10</b> unread posts</h6>
+            <div >
+
+            </div>
+            <div  *ngFor="let count of [getNewInstructorPostCount(course)]" style="margin-bottom: 5px">
+              <h6 *ngIf="count != 0" class="text-danger card-text"><b>{{count}}</b> unread instructor post</h6>
+            </div>
+            <div  *ngFor="let count of [getHasNoAnswerCount(course)]" style="margin-bottom: 5px">
+              <h6 *ngIf="count != 0" class="text-danger card-text"><b>{{count}}</b> questions has no answer</h6>
+            </div>
+            <div  *ngFor="let count of [getUnresolvedFollowupCount(course)]" style="margin-bottom: 5px">
+              <h6 *ngIf="count != 0" class="text-danger card-text"><b>{{count}}</b> unresolved followup questions</h6>
+            </div>
+            <div *ngFor="let count of [getNewAndGoodQuestionCount(course)]" style="margin-bottom: 5px">
+              <h6 *ngIf="count != 0" class="text-success card-text"><b>{{count}}</b> new good questions</h6>
+            </div>
+            <div *ngFor="let count of [getNewAndGoodFollowupQuestionCount(course)]" style="margin-bottom: 5px">
+              <h6 *ngIf="count != 0" class="text-success card-text"><b>{{count}}</b> new good followup questions</h6>
+            </div>
             <br>
             <button class="btn btn-primary" [routerLink]="'/course/' + course.id" style="margin-right: 5px">Go to Course</button>
             <button *ngIf="isInstructor" class="btn btn-secondary" [routerLink]="'/course/' + course.id + '/settings'" >Settings</button>

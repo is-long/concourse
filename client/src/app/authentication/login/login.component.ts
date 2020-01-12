@@ -14,11 +14,13 @@ export class LoginComponent implements OnInit {
 
   isCodeSent: boolean = false;
   isRegistered: boolean = true;
-
   email: string;
   code: string;
 
   constructor(private auth: AuthService, private router: Router, private userService: UserService) {
+  }
+
+  ngOnInit() {
   }
 
   sendCode() {
@@ -32,7 +34,21 @@ export class LoginComponent implements OnInit {
     );
   }
 
-  ngOnInit() {
+  submitEmail(event) {
+    //check if registered
+    event.preventDefault();
+    let user: User = new User();
+    user.email = this.email;
+
+    this.userService.isRegistered(user).subscribe(
+      data => {
+        if (data) {
+          this.sendCode();
+        } else {
+          this.isRegistered = false;
+        }
+      }
+    );
   }
 
   signIn() {
@@ -57,23 +73,6 @@ export class LoginComponent implements OnInit {
           localStorage.removeItem('sessionId');
           localStorage.removeItem('email');
           this.router.navigateByUrl('/login');
-        }
-      }
-    );
-  }
-
-  submitEmail(event) {
-    //check if registered
-    event.preventDefault();
-    let user: User = new User();
-    user.email = this.email;
-
-    this.userService.isRegistered(user).subscribe(
-      data => {
-        if (data){
-          this.sendCode();
-        } else {
-          this.isRegistered = false;
         }
       }
     );

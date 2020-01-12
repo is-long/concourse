@@ -20,62 +20,53 @@ import {Post} from "../../shared/post/post";
 })
 export class CourseHomeComponent implements OnInit {
 
+  user: User;
   course: Course;
-  courseId: string;
-  url: string = "/post/new";
-  // questionRootList: QuestionRoot[];
-  name: string;
-  showSearch: boolean = false;
-  showFilter: boolean = false;
+  originalQuestionRootList: QuestionRoot[];
 
-
-  questionRoothasInstructorAnswerMap: Map<string, boolean> = new Map();
+  //ICONS
   faCommentAlt = faCommentAlt;
   faEye = faEye;
   faCommentMedical = faCommentMedical;
 
-  qrIdqraCountMap: Map<string, number> = new Map();
-  qrIdfqCountMap: Map<string, number> = new Map();
-
-  originalQuestionRootList: QuestionRoot[];
+  //STATES
   isQuerying: boolean = false;
-
-  user: User;
-
   isViewCompact: boolean = false;
+  showSearch: boolean = false;
+  showFilter: boolean = false;
+
+  //SEARCH FIELDS
+  containsAllString: string = "";
+  containsExactString: string = "";
+  containsAnyString: string = "";
+  containsNoneString: string = "";
+  containsAllArr: string[];
+  containsExactArr: string[];
+  containsAnyArr: string[];
+  containsNoneArr: string[];
+
+
+  filterAuthorSelection: string;
 
 
   constructor(private router: Router, private courseService: CourseService, private route: ActivatedRoute,
               private userService: UserService) {
     let arr = this.router.url.split("/");
     let courseId = arr[arr.length - 1];
-    this.courseService.getCourse(courseId).subscribe(
-      optionalCourse => {
-        //if course exists
+
+    this.courseService.getCourse(courseId).subscribe(optionalCourse => {
         if (optionalCourse != null) {
           this.course = optionalCourse;
-          this.name = optionalCourse.name;
-          this.url = 'course/' + optionalCourse.id + '/post/new';
           this.originalQuestionRootList = optionalCourse.questionRootList;
 
-          for (let qr of optionalCourse.questionRootList) {
-            this.qrIdqraCountMap.set(qr.id, qr.questionRootAnswerList.length);
-            this.qrIdfqCountMap.set(qr.id, qr.followupQuestionList.length);
-            this.questionRoothasInstructorAnswerMap.set(qr.id, false);
-            for (let qra of qr.questionRootAnswerList) {
-              if (qra.authorType === "INSTRUCTOR") {
-                this.questionRoothasInstructorAnswerMap.set(qr.id, true);
-              }
-            }
-          }
           this.userService.getSelf().subscribe(
             data => {
               this.user = data;
 
+              //sort post by new
               this.sortBy('new');
             }
           );
-
         } else {
           this.router.navigateByUrl('/dashboard');
         }
@@ -83,56 +74,8 @@ export class CourseHomeComponent implements OnInit {
     );
   }
 
-
   ngOnInit() {
-
   }
-
-  // f(qr: QuestionRoot){
-  //     let result: number = 0;
-  //     for (let instructorId of this.course.instructorIds){
-  //       let pref: number = post.likesUserIDMap[instructorId];
-  //       if (pref != null && pref === 1){
-  //         result++;
-  //       }
-  //     }
-  //     return result;
-  //   }
-  //
-  //   return [false, true, false];
-  // }
-
-  isMarkedAGoodQuestion(qr: QuestionRoot) {
-    for (let instructorId of this.course.instructorIds){
-      if (qr.likesUserIDMap[instructorId] != null){
-        return true;
-      }
-    }
-    return false;
-  }
-
-  hasGreatFollowup(qr: QuestionRoot){
-    for (let instructorId of this.course.instructorIds){
-      for (let fq of qr.followupQuestionList){
-        if (fq.likesUserIDMap[instructorId]){
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  hasInstructorEndorsedAnswer(qr: QuestionRoot) {
-    for (let instructorId of this.course.instructorIds){
-      for (let qra of qr.questionRootAnswerList){
-        if (qra.likesUserIDMap[instructorId]){
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
 
   toggleView(selection: string) {
     if (selection === 'default') {
@@ -143,81 +86,62 @@ export class CourseHomeComponent implements OnInit {
     }
   }
 
+  //=============================
+  // POST ATTRIBUTE
+  //=============================
 
-  containsAllString: string = "";
-  containsExactString: string = "";
-  containsAnyString: string = "";
-  containsNoneString: string = "";
-
-  containsAllArr: string[];
-  containsExactArr: string[];
-  containsAnyArr: string[];
-  containsNoneArr: string[];
-
-
-  getDate(time: number) {
-    let daysAgo = Math.floor((new Date().getTime() - time) / 86400000);
-    if (daysAgo === 0) {
-      if (new Date().getTime() - time < 60 * 60000) {
-        return Math.floor((new Date().getTime() - time) / 60000) + " minutes ago"
-      } else if (new Date().getTime() - time < 24 * 60 * 60000) {
-        return Math.floor((new Date().getTime() - time) / (60 * 60000)) + " hours ago"
-      }
-      return "Today"
-    } else if (daysAgo === 1) {
-      return "Yesterday"
-    } else if (daysAgo < 30) {
-      return daysAgo.toString() + " days ago"
-    } else {
-      return new Date(time).toLocaleDateString("en-US", {year: 'numeric', month: 'short', day: 'numeric'});
-    }
-  }
-
-  stringToArray() {
-    this.containsAllArr = [];
-    this.containsExactArr = [];
-    this.containsAnyArr = [];
-    this.containsNoneArr = [];
-
-    if (this.containsAllString != "") {
-      this.containsAllArr = this.containsAllString.toLowerCase().split(",");
-      this.containsAllArr.forEach(s => s.trim());
-    }
-    if (this.containsExactString != "") {
-      this.containsExactArr = this.containsExactString.toLowerCase().split(",");
-      this.containsExactArr.forEach(s => s.trim());
-    }
-    if (this.containsAnyString != "") {
-      this.containsAnyArr = this.containsAnyString.toLowerCase().split(",");
-      this.containsAnyArr.forEach(s => s.trim());
-    }
-    if (this.containsNoneString != "") {
-      this.containsNoneArr = this.containsNoneString.toLowerCase().split(",");
-      this.containsNoneArr.forEach(s => s.trim());
-    }
-
-
-  }
-
-  extractContent(qr: QuestionRoot) {
-    let s: string = "";
-    s = s.concat(qr.title, qr.content, qr.authorName);
-
+  hasInstructorAnswer(qr: QuestionRoot) {
     for (let qra of qr.questionRootAnswerList) {
-      s = s.concat(qra.content, qra.authorName);
-      for (let qrar of qra.questionRootAnswerReplyList) {
-        s = s.concat(qra.content, qra.authorName);
+      if (qra.authorType === "INSTRUCTOR") {
+        return true;
       }
     }
-
-    for (let fq of qr.followupQuestionList) {
-      s = s.concat(fq.content, fq.authorName);
-      for (let fa of fq.followupAnswerList) {
-        s = s.concat(fa.content, fa.authorName);
-      }
-    }
-    return s.toLowerCase();
+    return false;
   }
+
+  hasUnresolvedFollowups(qr: QuestionRoot) {
+    for (let fq of qr.followupQuestionList) {
+      if (fq.followupAnswerList.length === 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  isMarkedAGoodQuestion(qr: QuestionRoot) {
+    for (let instructorId of this.course.instructorIds) {
+      if (qr.likesUserIDMap[instructorId] != null) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  hasGreatFollowup(qr: QuestionRoot) {
+    for (let instructorId of this.course.instructorIds) {
+      for (let fq of qr.followupQuestionList) {
+        if (fq.likesUserIDMap[instructorId]) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  hasInstructorEndorsedAnswer(qr: QuestionRoot) {
+    for (let instructorId of this.course.instructorIds) {
+      for (let qra of qr.questionRootAnswerList) {
+        if (qra.likesUserIDMap[instructorId]) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  //=============================
+  // SEARCH, FILTER, SORT
+  //=============================
 
   checkPostMatchSearch(qr: QuestionRoot) {
     let postContent = this.extractContent(qr).toLowerCase();
@@ -252,53 +176,6 @@ export class CourseHomeComponent implements OnInit {
     return false;
   }
 
-  query() {
-    this.clearArr();
-    this.stringToArray();
-
-    let result: QuestionRoot[] = [];
-
-    for (let qr of this.course.questionRootList) {
-      if (this.checkPostMatchSearch(qr)) {
-        if (this.checkPostMatchFilter(qr)) {
-          result.push(qr);
-        }
-      }
-    }
-
-    this.course.questionRootList = result;
-    this.isQuerying = true;
-  }
-
-
-  filterAuthorSelection: string;
-
-  selectAuthor(author: string) {
-    this.filterAuthorSelection = author;
-  }
-
-  hasInstructorAnswer(qr: QuestionRoot) {
-    for (let qra of qr.questionRootAnswerList) {
-      if (qra.authorType === "INSTRUCTOR") {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  extractCheckboxValue(name: string) {
-    let checkbox = document.getElementsByName(name);
-    let checkboxValue = [];
-
-    for (var i = 0; i < checkbox.length; i++) {
-      if (checkbox[i]['checked'] === true) {
-        checkboxValue.push(checkbox[i]['value']);
-      }
-    }
-    return checkboxValue;
-  }
-
-
   filterByTag(qr: QuestionRoot) {
     let filterTags: string[] = this.extractCheckboxValue("filterTags");
     let result: QuestionRoot[] = [];
@@ -314,17 +191,27 @@ export class CourseHomeComponent implements OnInit {
     }
 
     if (filterTags.includes("hasUnresolvedFollowups")) {
-
+      if (!this.hasUnresolvedFollowups(qr)) {
+        return false;
+      }
     }
-
     if (filterTags.includes("noInstructorAnswer")) {
       if (this.hasInstructorAnswer(qr)) {
         return false;
       }
     }
-
     if (filterTags.includes("noAnswerAtAll")) {
       if (qr.questionRootAnswerList.length != 0) {
+        return false;
+      }
+    }
+    if (filterTags.includes("greatQuestionFollowup")) {
+      if (!this.isMarkedAGoodQuestion(qr) && !this.hasGreatFollowup(qr)) {
+        return false;
+      }
+    }
+    if (filterTags.includes("instructorOrEndorsed")) {
+      if (!(this.hasInstructorAnswer(qr)) && !this.hasInstructorEndorsedAnswer(qr)) {
         return false;
       }
     }
@@ -408,25 +295,12 @@ export class CourseHomeComponent implements OnInit {
   }
 
   checkPostMatchFilter(qr: QuestionRoot) {
-    if (!this.filterByTag(qr)) {
-      return false;
-    }
+    return !(!this.filterByTag(qr)
+      || !this.filterByFolder(qr)
+      || !this.filterByDate(qr)
+      || !this.filterByAuthor(qr));
 
-    if (!this.filterByFolder(qr)) {
-      return false;
-    }
-
-    if (!this.filterByDate(qr)) {
-      return false;
-    }
-
-    if (!this.filterByAuthor(qr)) {
-      return false;
-    }
-
-    return true;
   }
-
 
   sortBy(selection: string) {
     //most discussion first
@@ -466,6 +340,30 @@ export class CourseHomeComponent implements OnInit {
     }
   }
 
+  //======================================
+  // QUERY
+  //======================================
+
+  query() {
+    this.clearArr();
+    this.stringToArray();
+    let result: QuestionRoot[] = [];
+
+    for (let qr of this.course.questionRootList) {
+      let matchSearch = this.checkPostMatchSearch(qr);
+      let matchFilter = this.checkPostMatchFilter(qr);
+
+      if (this.showSearch && this.showFilter && matchSearch && matchFilter){
+        result.push(qr);
+      } else if (this.showSearch && !this.showFilter && matchSearch){
+        result.push(qr);
+      } else if (!this.showSearch && this.showFilter && matchFilter){
+        result.push(qr);
+      }
+    }
+    this.course.questionRootList = result;
+    this.isQuerying = true;
+  }
 
   clearQuery() {
     this.course.questionRootList = this.originalQuestionRootList;
@@ -477,5 +375,87 @@ export class CourseHomeComponent implements OnInit {
     this.containsExactArr = null;
     this.containsAnyArr = null;
     this.containsNoneArr = null;
+  }
+
+  //======================================
+  // HELPER FUNCTION
+  //======================================
+
+  getDate(time: number) {
+    let daysAgo = Math.floor((new Date().getTime() - time) / 86400000);
+    if (daysAgo === 0) {
+      if (new Date().getTime() - time < 60 * 60000) {
+        return Math.floor((new Date().getTime() - time) / 60000) + " minutes ago"
+      } else if (new Date().getTime() - time < 24 * 60 * 60000) {
+        return Math.floor((new Date().getTime() - time) / (60 * 60000)) + " hours ago"
+      }
+      return "Today"
+    } else if (daysAgo === 1) {
+      return "Yesterday"
+    } else if (daysAgo < 30) {
+      return daysAgo.toString() + " days ago"
+    } else {
+      return new Date(time).toLocaleDateString("en-US", {year: 'numeric', month: 'short', day: 'numeric'});
+    }
+  }
+
+  stringToArray() {
+    this.containsAllArr = [];
+    this.containsExactArr = [];
+    this.containsAnyArr = [];
+    this.containsNoneArr = [];
+
+    if (this.containsAllString != "") {
+      this.containsAllArr = this.containsAllString.toLowerCase().split(",");
+      this.containsAllArr.forEach(s => s.trim());
+    }
+    if (this.containsExactString != "") {
+      this.containsExactArr = this.containsExactString.toLowerCase().split(",");
+      this.containsExactArr.forEach(s => s.trim());
+    }
+    if (this.containsAnyString != "") {
+      this.containsAnyArr = this.containsAnyString.toLowerCase().split(",");
+      this.containsAnyArr.forEach(s => s.trim());
+    }
+    if (this.containsNoneString != "") {
+      this.containsNoneArr = this.containsNoneString.toLowerCase().split(",");
+      this.containsNoneArr.forEach(s => s.trim());
+    }
+  }
+
+  extractContent(qr: QuestionRoot) {
+    let s: string = "";
+    s = s.concat(qr.title, qr.content, qr.authorName);
+
+    for (let qra of qr.questionRootAnswerList) {
+      s = s.concat(qra.content, qra.authorName);
+      for (let qrar of qra.questionRootAnswerReplyList) {
+        s = s.concat(qra.content, qra.authorName);
+      }
+    }
+
+    for (let fq of qr.followupQuestionList) {
+      s = s.concat(fq.content, fq.authorName);
+      for (let fa of fq.followupAnswerList) {
+        s = s.concat(fa.content, fa.authorName);
+      }
+    }
+    return s.toLowerCase();
+  }
+
+  extractCheckboxValue(name: string) {
+    let checkbox = document.getElementsByName(name);
+    let checkboxValue = [];
+
+    for (var i = 0; i < checkbox.length; i++) {
+      if (checkbox[i]['checked'] === true) {
+        checkboxValue.push(checkbox[i]['value']);
+      }
+    }
+    return checkboxValue;
+  }
+
+  selectAuthor(author: string) {
+    this.filterAuthorSelection = author;
   }
 }

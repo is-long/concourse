@@ -98,6 +98,7 @@ export class RegisterComponent implements OnInit {
     if (this.name === null  || this.name === undefined || this.name.length === 0) {
       return false;
     }
+
     //TODO: VALIDATE EMAIL
     if (this.email === null  || this.email === undefined ||  this.email.length === 0 || !this.email.includes("@")) {
       return false;

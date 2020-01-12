@@ -58,7 +58,7 @@ export class CreatePostComponent implements OnInit {
         if (data != null){
           this.router.navigateByUrl('course/' + this.courseId + "/post/" + data.id)
         } else {
-
+          this.router.navigateByUrl('course/' + this.courseId)
         }
       }
     );

@@ -1,6 +1,6 @@
 package com.concourse.tools;
 
-import com.concourse.models.CourseInviteToken;
+import com.concourse.models.tokens.CourseInviteToken;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
@@ -38,7 +38,7 @@ public class EmailServices {
     }
 
     public Session getSession() {
-        if (GMAIL_USERNAME.equals("") || GMAIL_PASSWORD.equals("")){
+        if (GMAIL_USERNAME.equals("") || GMAIL_PASSWORD.equals("")) {
             log.error("GMAIL IS NOT CONFIGURED. PLEASE FILL THE FIELDS IN src/main/resources/keys.properties.");
             System.exit(1);
         }
@@ -49,7 +49,7 @@ public class EmailServices {
         prop.put("mail.smtp.auth", "true");
         prop.put("mail.smtp.starttls.enable", "true"); //TLS
 
-        return  Session.getInstance(prop,
+        return Session.getInstance(prop,
                 new javax.mail.Authenticator() {
                     protected PasswordAuthentication getPasswordAuthentication() {
                         return new PasswordAuthentication(GMAIL_USERNAME, GMAIL_PASSWORD);
@@ -91,14 +91,14 @@ public class EmailServices {
         }
     }
 
-    public Map<String, CourseInviteToken> sendCourseInviteToken(Map<String, CourseInviteToken> emailTokenMap, String courseName){
+    public Map<String, CourseInviteToken> sendCourseInviteToken(Map<String, CourseInviteToken> emailTokenMap, String courseName) {
         Map<String, CourseInviteToken> failedEmails = new HashMap<>();
 
         String loginLink = BASE_URL + "/login";
         String registerLink = BASE_URL + "/register";
         String joinCourseLink = BASE_URL + "/course/join";
 
-        for (Map.Entry<String, CourseInviteToken> entry : emailTokenMap.entrySet()){
+        for (Map.Entry<String, CourseInviteToken> entry : emailTokenMap.entrySet()) {
 
             String content = String.format(
                     "<p>Hi! You're invited to join course %s as %s. <a href=\"%s\">Register</a> (as <b>%s</b>) or <a href=\"%s\">Login</a> to Concourse, then go to <a href=\"%s\">Join" +

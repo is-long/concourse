@@ -1,6 +1,6 @@
 package com.concourse.controllers;
 
-import com.concourse.models.LoginToken;
+import com.concourse.models.tokens.LoginToken;
 import com.concourse.repository.InstructorRepository;
 import com.concourse.repository.StudentRepository;
 import com.concourse.repository.TokenRepository;

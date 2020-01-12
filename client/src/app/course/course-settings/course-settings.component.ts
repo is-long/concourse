@@ -1,7 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {CourseService} from "../../services/course.service";
 import {Router} from "@angular/router";
 import {Course} from "../../shared/course";
+import {User} from "../../shared/user/user";
+import {UserService} from "../../services/user.service";
 
 @Component({
   selector: 'app-course-settings',
@@ -12,6 +14,7 @@ export class CourseSettingsComponent implements OnInit {
 
   newStudentsEmailString: string;
   newInstructorsEmailString: string;
+  toRemoveStudentsEmailString: string;
 
   folders: string[];
   newFolderString: string;
@@ -23,7 +26,9 @@ export class CourseSettingsComponent implements OnInit {
   showInviteStudent: boolean = false;
   showQuestionFolder: boolean = false;
 
-  constructor(private courseService: CourseService, private router: Router) {
+  user: User;
+
+  constructor(private courseService: CourseService, private router: Router, private userService: UserService) {
     let arr = router.url.split("/");
     this.courseId = arr[arr.length - 2];
 
@@ -34,6 +39,12 @@ export class CourseSettingsComponent implements OnInit {
         this.courseService.getCourseFolders(this.courseId).subscribe(
           data => {
             this.folders = data;
+
+            this.userService.getSelf().subscribe(
+              self => {
+                this.user = self;
+              }
+            )
           }
         );
       }
@@ -44,7 +55,7 @@ export class CourseSettingsComponent implements OnInit {
   }
 
 
-  addFolders(){
+  addFolders() {
     this.courseService.addCourseFolders(this.courseId, this.newFolderString.split(",")).subscribe(
       data => {
         window.location.reload();
@@ -52,17 +63,7 @@ export class CourseSettingsComponent implements OnInit {
     );
   }
 
-
-  addStudents(){
-    let studentEmailArr = this.emailStringToEmailArray(this.newStudentsEmailString);
-    this.courseService.sendInvitation(this.courseId, studentEmailArr, 'STUDENT').subscribe(
-      () => {
-        window.location.reload();
-      }
-    );
-  }
-
-  addInstructors(){
+  addInstructors() {
     let instructorEmailArr = this.emailStringToEmailArray(this.newInstructorsEmailString);
     this.courseService.sendInvitation(this.courseId, instructorEmailArr, 'INSTRUCTOR').subscribe(
       () => {
@@ -71,9 +72,33 @@ export class CourseSettingsComponent implements OnInit {
     );
   }
 
+  addStudents() {
+    let studentEmailArr = this.emailStringToEmailArray(this.newStudentsEmailString);
+    this.courseService.sendInvitation(this.courseId, studentEmailArr, 'STUDENT').subscribe(
+      () => {
+        window.location.reload();
+      }
+    );
+  }
+
+  removeStudents() {
+    let studentEmailArr = this.emailStringToEmailArray(this.toRemoveStudentsEmailString);
+    this.courseService.removeStudents(this.courseId, studentEmailArr).subscribe(
+      success => {
+        window.location.reload();
+      }
+    );
+  }
+
+  deleteCourse() {
+    this.courseService.deleteCourse(this.course.id).subscribe(() => {
+        this.router.navigateByUrl('/dashboard');
+      }
+    );
+  }
 
   emailStringToEmailArray(arr: string): string[] {
-    if (arr == null || arr.length == 0){
+    if (arr == null || arr.length == 0) {
       return [];
     }
 
@@ -87,6 +112,9 @@ export class CourseSettingsComponent implements OnInit {
     }
     return emailArr;
   }
+
+
+
 
   //TODO:
   isValidEmail(email: string): boolean {

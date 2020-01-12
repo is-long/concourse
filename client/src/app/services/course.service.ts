@@ -91,31 +91,40 @@ export class CourseService {
   }
 
 
-
-  deletePost(courseId: string, postId: string, postType: string){
+  deletePost(courseId: string, postId: string, postType: string) {
     return this.http.post(this.url + "/course/" + courseId + "/post/" + postId + "/delete?postType=" + postType,
       this.authService.getSession());
   }
 
-  isOwnPost(courseId: string, postId: string){
+  isOwnPost(courseId: string, postId: string) {
     return this.http.post(this.url + "/course/" + courseId + "/post/" + postId + "/checkOwnership",
       this.authService.getSession());
   }
 
-  getPost(courseId: string, postId: string){
+  getPost(courseId: string, postId: string) {
     return this.http.post<any>(this.url + "/course/" + courseId + "/post/" + postId + "/get",
       this.authService.getSession());
   }
 
-  editPost(courseId: string, postId: string, post: Post){
+  editPost(courseId: string, postId: string, post: Post) {
     return this.http.post<any>(this.url + "/course/" + courseId + "/post/" + postId
       + "/edit?sessionId=" + this.authService.getSession().sessionId, post
-      );
+    );
   }
 
-  sendInvitation(courseId: string, emails: string[], role: string){
+  sendInvitation(courseId: string, emails: string[], role: string) {
     return this.http.post(this.url + "/course/" + courseId + '/invite?sessionId='
-      + this.authService.getSession().sessionId +'&role=' + role, emails);
+      + this.authService.getSession().sessionId + '&role=' + role, emails);
+  }
+
+  removeStudents(courseId: string, emails: string[]) {
+    return this.http.post(this.url + "/course/" + courseId + '/delete/students?sessionId='
+      + this.authService.getSession().sessionId, emails);
+  }
+
+  deleteCourse(courseId: string) {
+    return this.http.post(this.url + "/course/" + courseId + '/delete/course',
+      this.authService.getSession());
   }
 }
 

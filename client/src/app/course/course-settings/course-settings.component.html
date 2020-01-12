@@ -74,26 +74,17 @@
     <div class="col text-danger">
       <label for="removeStudent">Remove students</label><br>
       <textarea name="removeStudent" id="removeStudent" style="width: 100%" rows="3"
-                placeholder="Enter comma-separated student emails"></textarea>
+                placeholder="Enter comma-separated student emails"
+      [(ngModel)]="toRemoveStudentsEmailString"></textarea>
       <br>
-      <button class="btn btn-danger">Remove</button>
+      <button class="btn btn-danger" (click)="removeStudents()">Remove</button>
     </div>
   </div>
-
-  <div class="row" style=" padding: 2% 0 2% 0;">
-    <div class="col text-danger">
-      <label for="removeInstructor">Remove instructors</label><br>
-      <textarea name="removeInstructor" id="removeInstructor" style="width: 100%" rows="3"
-                placeholder="Enter comma-separated instructor emails"></textarea>
-      <br>
-      <button class="btn btn-danger">Remove</button>
-    </div>
-  </div>
-  <br>
 
   <div class="row" style=" padding: 2% 0 2% 0;">
     <div class="col">
-      <button class="btn btn-danger">Delete Course</button>
+      <button *ngIf="user.email === course.creatorInstructorId" class="btn btn-danger"
+      (click)="deleteCourse()">Delete Course</button>
     </div>
   </div>
 </div>

@@ -17,7 +17,6 @@ import { RegisterConfirmComponent } from './authentication/register/register-con
 import { JoinCourseComponent } from './course/join-course/join-course.component';
 import {FontAwesomeModule} from "@fortawesome/angular-fontawesome";
 import { CreatePostComponent } from './course/post/create-post/create-post.component';
-import { ProfileComponent } from './profile/profile.component';
 import { PostHomeComponent } from './course/post/post-home/post-home.component';
 import {EditorModule} from "@tinymce/tinymce-angular";
 import { EditorComponent } from './course/post/editor/editor.component';
@@ -38,7 +37,6 @@ import { EditPostComponent } from './course/post/edit-post/edit-post.component';
     RegisterConfirmComponent,
     JoinCourseComponent,
     CreatePostComponent,
-    ProfileComponent,
     PostHomeComponent,
     EditorComponent,
     CourseSettingsComponent,

@@ -1,9 +1,7 @@
 package com.concourse.controllers;
 
-import com.concourse.models.ConfirmationToken;
-import com.concourse.models.Course;
+import com.concourse.models.tokens.ConfirmationToken;
 import com.concourse.models.Session;
-import com.concourse.models.posts.*;
 import com.concourse.models.users.Instructor;
 import com.concourse.models.users.Student;
 import com.concourse.models.users.User;
@@ -16,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 

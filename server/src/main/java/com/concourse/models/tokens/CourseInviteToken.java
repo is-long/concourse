@@ -1,4 +1,4 @@
-package com.concourse.models;
+package com.concourse.models.tokens;
 
 import com.concourse.tools.StringTools;
 import lombok.Data;
