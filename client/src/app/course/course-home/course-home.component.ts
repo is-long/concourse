@@ -8,6 +8,9 @@ import {faCommentAlt} from "@fortawesome/free-solid-svg-icons/faCommentAlt";
 import {faCommentMedical} from "@fortawesome/free-solid-svg-icons/faCommentMedical";
 import {QuestionRoot} from "../../shared/post/question-root";
 import {forEachComment} from "tslint";
+import {User} from "../../shared/user/user";
+import {UserService} from "../../services/user.service";
+import {Post} from "../../shared/post/post";
 
 
 @Component({
@@ -37,13 +40,13 @@ export class CourseHomeComponent implements OnInit {
   originalQuestionRootList: QuestionRoot[];
   isQuerying: boolean = false;
 
+  user: User;
 
-  constructor(private router: Router, private courseService: CourseService, private route: ActivatedRoute) {
-
-  }
+  isViewCompact: boolean = false;
 
 
-  ngOnInit() {
+  constructor(private router: Router, private courseService: CourseService, private route: ActivatedRoute,
+              private userService: UserService) {
     let arr = this.router.url.split("/");
     let courseId = arr[arr.length - 1];
     this.courseService.getCourse(courseId).subscribe(
@@ -65,11 +68,79 @@ export class CourseHomeComponent implements OnInit {
               }
             }
           }
+          this.userService.getSelf().subscribe(
+            data => {
+              this.user = data;
+
+              this.sortBy('new');
+            }
+          );
+
         } else {
           this.router.navigateByUrl('/dashboard');
         }
       }
     );
+  }
+
+
+  ngOnInit() {
+
+  }
+
+  // f(qr: QuestionRoot){
+  //     let result: number = 0;
+  //     for (let instructorId of this.course.instructorIds){
+  //       let pref: number = post.likesUserIDMap[instructorId];
+  //       if (pref != null && pref === 1){
+  //         result++;
+  //       }
+  //     }
+  //     return result;
+  //   }
+  //
+  //   return [false, true, false];
+  // }
+
+  isMarkedAGoodQuestion(qr: QuestionRoot) {
+    for (let instructorId of this.course.instructorIds){
+      if (qr.likesUserIDMap[instructorId] != null){
+        return true;
+      }
+    }
+    return false;
+  }
+
+  hasGreatFollowup(qr: QuestionRoot){
+    for (let instructorId of this.course.instructorIds){
+      for (let fq of qr.followupQuestionList){
+        if (fq.likesUserIDMap[instructorId]){
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  hasInstructorEndorsedAnswer(qr: QuestionRoot) {
+    for (let instructorId of this.course.instructorIds){
+      for (let qra of qr.questionRootAnswerList){
+        if (qra.likesUserIDMap[instructorId]){
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+
+  toggleView(selection: string) {
+    if (selection === 'default') {
+      this.isViewCompact = false;
+    }
+    if (selection === 'compact') {
+      this.isViewCompact = true;
+    }
   }
 
 
@@ -82,6 +153,25 @@ export class CourseHomeComponent implements OnInit {
   containsExactArr: string[];
   containsAnyArr: string[];
   containsNoneArr: string[];
+
+
+  getDate(time: number) {
+    let daysAgo = Math.floor((new Date().getTime() - time) / 86400000);
+    if (daysAgo === 0) {
+      if (new Date().getTime() - time < 60 * 60000) {
+        return Math.floor((new Date().getTime() - time) / 60000) + " minutes ago"
+      } else if (new Date().getTime() - time < 24 * 60 * 60000) {
+        return Math.floor((new Date().getTime() - time) / (60 * 60000)) + " hours ago"
+      }
+      return "Today"
+    } else if (daysAgo === 1) {
+      return "Yesterday"
+    } else if (daysAgo < 30) {
+      return daysAgo.toString() + " days ago"
+    } else {
+      return new Date(time).toLocaleDateString("en-US", {year: 'numeric', month: 'short', day: 'numeric'});
+    }
+  }
 
   stringToArray() {
     this.containsAllArr = [];
@@ -111,7 +201,7 @@ export class CourseHomeComponent implements OnInit {
 
   extractContent(qr: QuestionRoot) {
     let s: string = "";
-    s = s.concat(qr.content, qr.authorName);
+    s = s.concat(qr.title, qr.content, qr.authorName);
 
     for (let qra of qr.questionRootAnswerList) {
       s = s.concat(qra.content, qra.authorName);
@@ -154,7 +244,6 @@ export class CourseHomeComponent implements OnInit {
     if (this.containsAnyArr.length === 0) {
       return true
     }
-
     for (let keyword of this.containsAnyArr) {
       if (postContent.includes(keyword)) {
         return true;
@@ -182,13 +271,13 @@ export class CourseHomeComponent implements OnInit {
   }
 
 
-  filterAuthor: string;
+  filterAuthorSelection: string;
 
   selectAuthor(author: string) {
-    this.filterAuthor = author;
+    this.filterAuthorSelection = author;
   }
 
-  hasInstructorAnswer(qr: QuestionRoot){
+  hasInstructorAnswer(qr: QuestionRoot) {
     for (let qra of qr.questionRootAnswerList) {
       if (qra.authorType === "INSTRUCTOR") {
         return true;
@@ -196,52 +285,185 @@ export class CourseHomeComponent implements OnInit {
     }
     return false;
   }
-  filterHasInstructorAnswer(qrArr : QuestionRoot[]){
-    let result: QuestionRoot[] = [];
-    for (let qr of qrArr){
-      if (this.hasInstructorAnswer(qr)){
-        result.push(qr);
+
+  extractCheckboxValue(name: string) {
+    let checkbox = document.getElementsByName(name);
+    let checkboxValue = [];
+
+    for (var i = 0; i < checkbox.length; i++) {
+      if (checkbox[i]['checked'] === true) {
+        checkboxValue.push(checkbox[i]['value']);
       }
     }
-    return result;
+    return checkboxValue;
   }
 
 
-  checkPostMatchFilter(qr: QuestionRoot) {
+  filterByTag(qr: QuestionRoot) {
+    let filterTags: string[] = this.extractCheckboxValue("filterTags");
     let result: QuestionRoot[] = [];
 
+    if (filterTags.includes("all")) {
+      return true;
+    }
 
-    let filterTags = document.getElementsByName("filterTags");
-    for (var i = 0; i < filterTags.length; i++){
-      if (filterTags[i]['checked'] === true){
-        if (filterTags[i]['value'] === "all"){
-          break;
-        } else {
-          break;
-        }
+    if (filterTags.includes("unread")) {
+      if (qr.viewerIds.includes(this.user.email)) {
+        return false;
       }
     }
 
-    let filterFolders = document.getElementsByName("filterFolders");
-    for (var i = 0; i < filterFolders.length; i++){
-      if (filterFolders[i]['checked'] === true){
+    if (filterTags.includes("hasUnresolvedFollowups")) {
 
+    }
 
-
+    if (filterTags.includes("noInstructorAnswer")) {
+      if (this.hasInstructorAnswer(qr)) {
+        return false;
       }
     }
 
-
-    let filterDate = document.getElementsByName("filterDate");
-    for (var i = 0; i < filterDate.length; i++){
-      if (filterDate[i]['checked'] === true){
-
-
-
+    if (filterTags.includes("noAnswerAtAll")) {
+      if (qr.questionRootAnswerList.length != 0) {
+        return false;
       }
     }
 
     return true;
+  }
+
+  filterByFolder(qr: QuestionRoot) {
+    let filterFolders: string[] = this.extractCheckboxValue("filterFolders");
+    if (filterFolders.includes("all")) {
+      return true;
+    }
+    if (filterFolders.includes(qr.folder)) {
+      return true;
+    }
+    return false;
+  }
+
+  filterByDate(qr: QuestionRoot) {
+    //TODO: fix implementation
+
+    let now = new Date().getTime();
+    let filterDates: string[] = this.extractCheckboxValue("filterDates");
+    if (filterDates.includes("all")) {
+      return true;
+    }
+
+    if (filterDates.includes("last24hrs")) {
+      if (qr.postDate < now - 86400000) {
+        return false;
+      }
+    }
+
+    if (filterDates.includes("last3days")) {
+      if (qr.postDate < now - 86400000 * 3) {
+        return false;
+      }
+    }
+
+    if (filterDates.includes("last7days")) {
+      if (qr.postDate < now - 86400000 * 7) {
+        return false;
+      }
+    }
+
+    if (filterDates.includes("last14days")) {
+      if (qr.postDate < now - 86400000 * 14) {
+        return false;
+      }
+    }
+
+    if (filterDates.includes("last30days")) {
+      if (qr.postDate < now - 86400000 * 30) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  filterByAuthor(qr: QuestionRoot) {
+    if (this.filterAuthorSelection === "all") {
+      return true;
+    }
+    if (this.filterAuthorSelection === "instructorsOnly") {
+      if (qr.authorType != "INSTRUCTOR") {
+        return false;
+      }
+    }
+    if (this.filterAuthorSelection === "studentsOnly") {
+      if (qr.authorType != "STUDENT") {
+        return false;
+      }
+    }
+    if (this.filterAuthorSelection === "authorName") {
+      if (!qr.authorName.includes(document.getElementById("authorNameContains")['value'])) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  checkPostMatchFilter(qr: QuestionRoot) {
+    if (!this.filterByTag(qr)) {
+      return false;
+    }
+
+    if (!this.filterByFolder(qr)) {
+      return false;
+    }
+
+    if (!this.filterByDate(qr)) {
+      return false;
+    }
+
+    if (!this.filterByAuthor(qr)) {
+      return false;
+    }
+
+    return true;
+  }
+
+
+  sortBy(selection: string) {
+    //most discussion first
+    if (selection === "discussion") {
+      this.course.questionRootList.sort((qr1: QuestionRoot, qr2: QuestionRoot) => {
+        return (qr2.questionRootAnswerList.length + qr2.followupQuestionList.length)
+          - (qr1.questionRootAnswerList.length + qr1.followupQuestionList.length)
+      });
+    }
+
+    //newest first
+    if (selection === "new") {
+      this.course.questionRootList.sort((qr1: QuestionRoot, qr2: QuestionRoot) => {
+        return qr2.postDate - qr1.postDate
+      });
+    }
+
+    //oldest first
+    if (selection === "old") {
+      this.course.questionRootList.sort((qr1: QuestionRoot, qr2: QuestionRoot) => {
+        return qr1.postDate - qr2.postDate
+      });
+    }
+
+    //most view first
+    if (selection === "view") {
+      this.course.questionRootList.sort((qr1: QuestionRoot, qr2: QuestionRoot) => {
+        return qr2.viewCount - qr1.viewCount;
+      });
+    }
+
+    //most vote first
+    if (selection === "vote") {
+      this.course.questionRootList.sort((qr1: QuestionRoot, qr2: QuestionRoot) => {
+        return qr2.likeCount - qr1.likeCount;
+      });
+    }
   }
 
 

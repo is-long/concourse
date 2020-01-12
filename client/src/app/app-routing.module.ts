@@ -18,6 +18,8 @@ import {PostHomeComponent} from "./course/post/post-home/post-home.component";
 import {CreatePostComponent} from "./course/post/create-post/create-post.component";
 import {CourseService} from "./services/course.service";
 import {CourseSettingsComponent} from "./course/course-settings/course-settings.component";
+import {PostAuthorGuard} from "./guards/post-author.guard";
+import {EditPostComponent} from "./course/post/edit-post/edit-post.component";
 
 
 const routes: Routes = [
@@ -69,13 +71,18 @@ const routes: Routes = [
   },
   {
     path: 'course/:courseId/settings',
-    canActivate: [LoggedInGuard, InstructorGuard],
+    canActivate: [LoggedInGuard, InvolvedInCourseGuard, InstructorGuard],
     pathMatch: 'full', component: CourseSettingsComponent
   },
   {
     path: 'course/:courseId/post/new',
     canActivate: [LoggedInGuard, InvolvedInCourseGuard],
     pathMatch: 'full', component: CreatePostComponent
+  },
+  {
+    path: 'course/:courseId/post/:postId/edit',
+    canActivate: [LoggedInGuard, PostAuthorGuard],
+    pathMatch: 'full', component: EditPostComponent
   },
   {
     path: 'course/:courseId/post/:postId',

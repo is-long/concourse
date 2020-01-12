@@ -47,69 +47,6 @@ public class UserController {
         this.postRepository = postRepository;
 
 
-        //create course
-        Course c = new Course();
-        c.setName("CIS 455");
-        c.setDescription("Web");
-        List<String> folders = new ArrayList<>();
-        folders.add("General");
-        c.setFolders(folders);
-
-        //create instructor and set as instructor of the course
-        Instructor i = new Instructor();
-        i.setEmail("islong@seas.upenn.edu");
-        i.setEmailConfirmed(true);
-        i.setRole("INSTRUCTOR");
-        i.setName("Isaac");
-        i.addCourseInstructedIds(c.getId());
-        instructorRepository.save(i);
-
-        //create student and enroll in course
-        Student s = new Student();
-        s.setEmailConfirmed(true);
-        s.setEmail("john@asdflkajsdflkj.com");
-        s.setName("Johnny");
-        s.setRole("STUDENT");
-        s.addCourseEnrolledIds(c.getId());
-        studentRepository.save(s);
-
-        //add i as one of the instructor, and as creator of the course
-        c.addInstructor(i.getEmail());
-        c.setCreatorInstructorId(i.getEmail());
-        //add s as student of the course
-        c.addStudent(s.getEmail());
-
-        //create question root
-        QuestionRoot qr = new QuestionRoot(c.getId(), "<h1> What is the answer</h1>", s, "What is 1 + 1??");
-        QuestionRootAnswer qra = new QuestionRootAnswer(c.getId(), "<h1> It's 2</h1>", i, qr.getId());
-        QuestionRootAnswerReply qrar1 = new QuestionRootAnswerReply(c.getId(), "<h2> Thanks</h2>", s, qra.getId());
-        QuestionRootAnswerReply qrar2 = new QuestionRootAnswerReply(c.getId(), "<h2> You're welcome</h2>", s, qra.getId());
-        postRepository.save(qrar1);
-        postRepository.save(qrar2);
-        qra.addQuestionRootAnswerReply(qrar1);
-        qra.addQuestionRootAnswerReply(qrar2);
-        postRepository.save(qra);
-        qr.addQuestionRootAnswer(qra);
-
-        //create followup question
-        FollowupQuestion fq = new FollowupQuestion(c.getId(), "<h2> How about 2 + 2? </h2>", s, qr.getId());
-        FollowupAnswer fa1 = new FollowupAnswer(c.getId(), "<h2> It's 4. </h2>", i, fq.getId());
-        FollowupAnswer fa2 = new FollowupAnswer(c.getId(), "<h2> Thanks !!!</h2>", s, fq.getId());
-        FollowupAnswer fa3 = new FollowupAnswer(c.getId(), "<h2> Welcome !!!</h2>", i, fq.getId());
-        postRepository.save(fa1);
-        postRepository.save(fa2);
-        postRepository.save(fa3);
-        fq.addFollowupAnswer(fa1);
-        fq.addFollowupAnswer(fa2);
-        fq.addFollowupAnswer(fa3);
-        postRepository.save(fq);
-        qr.addFollowupQuestion(fq);
-        qr.setHasInstructorAnswer();
-        qr.setFolder("General");
-
-        this.postRepository.save(qr);
-        c.addQuestionRoot(qr);
-        courseRepository.save(c);
     }
 
     //===================================================

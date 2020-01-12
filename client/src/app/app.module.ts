@@ -22,6 +22,7 @@ import { PostHomeComponent } from './course/post/post-home/post-home.component';
 import {EditorModule} from "@tinymce/tinymce-angular";
 import { EditorComponent } from './course/post/editor/editor.component';
 import { CourseSettingsComponent } from './course/course-settings/course-settings.component';
+import { EditPostComponent } from './course/post/edit-post/edit-post.component';
 
 @NgModule({
   declarations: [
@@ -41,6 +42,7 @@ import { CourseSettingsComponent } from './course/course-settings/course-setting
     PostHomeComponent,
     EditorComponent,
     CourseSettingsComponent,
+    EditPostComponent,
   ],
   imports: [
     BrowserModule,

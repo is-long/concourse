@@ -5,19 +5,51 @@
     <h3 class="text-center">Welcome to {{name}}</h3>
   </div>
   <br>
-  <div class="row">
+  <div class="row d-flex">
     <button class="btn btn-outline-success" style="margin-right: 5px" routerLink="post/new">New Post</button>
     <button class="btn btn-outline-info" style="margin-right: 5px" (click)="showSearch = !showSearch">Search</button>
     <button class="btn btn-outline-dark" style="margin-right: 5px" (click)="showFilter = !showFilter">Filter</button>
-    <button class="btn btn-warning" style="margin-right: 5px" routerLink="settings">View</button>
-    <button class="btn btn-danger" style="margin-right: 5px" routerLink="settings">Settings</button>
+    <button *ngIf="user != undefined && user.role === 'INSTRUCTOR'" class="btn btn-danger" style="margin-right: 5px"
+            routerLink="settings">
+      Settings
+    </button>
+
+
+    <div class="row ml-auto" style="margin-top: 5px">
+      <div class="dropdown" style="margin-right: 5px">
+        <button class="btn btn-outline-warning dropdown-toggle" type="button" id="dropdownViewButton"
+                data-toggle="dropdown"
+                aria-haspopup="true" aria-expanded="false">
+          View
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownViewButton">
+          <a class="dropdown-item" (click)="toggleView('default')">Default</a>
+          <a class="dropdown-item" (click)="toggleView('compact')">Compact</a>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="dropdownSortButton"
+                data-toggle="dropdown"
+                aria-haspopup="true" aria-expanded="false">
+          Sort
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownSortButton">
+          <a class="dropdown-item" (click)="sortBy('new')">New (default)</a>
+          <a class="dropdown-item" (click)="sortBy('old')">Old</a>
+          <a class="dropdown-item" (click)="sortBy('vote')">Most Vote</a>
+          <a class="dropdown-item" (click)="sortBy('view')">Most View</a>
+          <a class="dropdown-item" (click)="sortBy('discussion')">Most Discussion</a>
+        </div>
+      </div>
+    </div>
     <br>
   </div>
 </div>
 
 <div class="container" *ngIf="showSearch || showFilter">
   <br>
-  <div class="row" *ngIf="showSearch">
+  <div class="row" *ngIf="showSearch" style="border: lightskyblue solid 2pt; padding: 1%">
     <div class="column">
       <h5>Search post with...</h5>
       <p class="text-secondary">(separate word/phrase by comma)</p>
@@ -71,113 +103,106 @@
       <br>
     </div>
   </div>
+  <br>
 
-  <div class="row" *ngIf="showFilter">
+  <div class="row" *ngIf="showFilter" style="border: darkgrey solid 2pt; padding: 1%">
     <div class="container">
       <div class="column">
         <div class="row">
           <h5>Filter posts by...</h5>
         </div>
-        <br>
-
 
         <div class="row">
           <p style="text-align: left"><b>Tags</b></p>
-        </div>
-        <div class="row">
-          <div style="margin-right: 10px">
-            <input type="checkbox" name="filterTags" style="margin-right: 5px;margin-bottom: 5px"
-                   class="btn btn-secondary"
-                   value="all" checked> All (default)
-          </div>
-        </div>
-        <div class="row">
-          <div style="margin-right: 10px">
-            <input type="checkbox" name="filterTags" style="margin-right: 5px;margin-bottom: 5px"
-                   class="btn btn-secondary"
-                   value="unread">
-            Unread
-          </div>
-        </div>
-        <div class="row">
-          <div style="margin-right: 10px">
-            <input type="checkbox" name="filterTags" style="margin-right: 5px;margin-bottom: 5px"
-                   class="btn btn-secondary"
-                   value="hasunresolvedfollowups"> Has
-            unresolved followups
-          </div>
-        </div>
-        <div class="row">
-          <div style="margin-right: 10px">
-            <input type="checkbox" name="filterTags" style="margin-right: 5px;margin-bottom: 5px"
-                   class="btn btn-secondary"
-                   value="hasinstructoranswer"> Has
-            instructor answer
-          </div>
-        </div>
-        <div class="row">
-          <div style="margin-right: 10px">
-            <input type="checkbox" name="filterTags" style="margin-right: 5px;margin-bottom: 5px"
-                   class="btn btn-secondary"
-                   value="noinstructoranswer"> No
-            instructor answer
-          </div>
-        </div>
-        <div class="row">
-          <div style="margin-right: 10px">
-            <input type="checkbox" name="filterTags" style="margin-right: 5px;margin-bottom: 5px"
-                   class="btn btn-secondary"
-                   value="noansweratall"> No
-            answer at all
+          <div class="col form-inline">
+
+            <div style="margin-right: 10px">
+              <input type="checkbox" name="filterTags" style="margin-right: 5px;margin-bottom: 5px"
+                     class="btn btn-secondary"
+                     value="all" checked> All (default)
+            </div>
+            <div style="margin-right: 10px">
+              <input type="checkbox" name="filterTags" style="margin-right: 5px;margin-bottom: 5px"
+                     class="btn btn-secondary"
+                     value="unread">
+              Unread
+            </div>
+            <div style="margin-right: 10px">
+              <input type="checkbox" name="filterTags" style="margin-right: 5px;margin-bottom: 5px"
+                     class="btn btn-secondary"
+                     value="hasUnresolvedFollowups"> Has unresolved followups
+            </div>
+            <div style="margin-right: 10px">
+              <input type="checkbox" name="filterTags" style="margin-right: 5px;margin-bottom: 5px"
+                     class="btn btn-secondary"
+                     value="noInstructorAnswer"> No
+              instructor answer
+            </div>
+            <div style="margin-right: 10px">
+              <input type="checkbox" name="filterTags" style="margin-right: 5px;margin-bottom: 5px"
+                     class="btn btn-secondary"
+                     value="noAnswerAtAll"> No
+              answer at all
+            </div>
+            <div style="margin-right: 10px">
+              <input type="checkbox" name="filterTags" style="margin-right: 5px;margin-bottom: 5px"
+                     class="btn btn-secondary"
+                     value="greatQuestionFollowup"> Great Question/Followup
+            </div>
+            <div style="margin-right: 10px">
+              <input type="checkbox" name="filterTags" style="margin-right: 5px;margin-bottom: 5px"
+                     class="btn btn-secondary"
+                     value="instructorOrEndorsed"> Has instructor's or endorsed answer
+            </div>
           </div>
         </div>
         <br>
 
         <div class="row">
           <p style="text-align: left"><b>Folders</b></p>
-        </div>
-        <div class="row">
-          <div style="margin-right: 5px">
-            <input type="checkbox" style="margin-right: 5px;margin-bottom: 5px" class="btn btn-secondary" checked
-                   name="filterFolders" value="all">All
-            folders
-          </div>
-          <div *ngFor="let folderName of course.folders" style="margin-right: 5px">
-            <input type="checkbox" style="margin-right: 5px;margin-bottom: 5px" class="btn btn-secondary"
-                   name="filterFolders" value="{{folderName}}">{{folderName}}
-          </div>
-        </div>
+          <div class="col form-inline">
 
+            <div style="margin-right: 5px">
+              <input type="checkbox" style="margin-right: 5px;margin-bottom: 5px" class="btn btn-secondary" checked
+                     name="filterFolders" value="all">All
+              folders
+            </div>
+            <div *ngFor="let folderName of course.folders" style="margin-right: 5px">
+              <input type="checkbox" style="margin-right: 5px;margin-bottom: 5px" class="btn btn-secondary"
+                     name="filterFolders" value="{{folderName}}">{{folderName}}
+            </div>
+          </div>
+        </div>
         <br>
 
         <div class="row">
           <p style="text-align: left"><b>Date</b></p>
-        </div>
-        <div class="row">
-          <div style="margin-right: 10px">
-            <input type="checkbox" style="margin-right: 5px;margin-bottom: 5px" class="btn btn-secondary" checked
-            name="filterDate" value="all"> All
-            time
-          </div>
-          <div style="margin-right: 10px">
-            <input type="checkbox" style="margin-right: 5px;margin-bottom: 5px" class="btn btn-secondary"
-                   name="filterDate" value="today"> Today
-          </div>
-          <div style="margin-right: 10px">
-            <input type="checkbox" style="margin-right: 5px;margin-bottom: 5px" class="btn btn-secondary"
-                   name="filterDate" value="last3days"> Last 3 days
-          </div>
-          <div style="margin-right: 10px">
-            <input type="checkbox" style="margin-right: 5px;margin-bottom: 5px" class="btn btn-secondary"
-                   name="filterDate" value="last7days"> Last 7 days
-          </div>
-          <div style="margin-right: 10px">
-            <input type="checkbox" style="margin-right: 5px;margin-bottom: 5px" class="btn btn-secondary"
-                   name="filterDate" value="last2weeks"> Last 2 weeks
-          </div>
-          <div style="margin-right: 10px">
-            <input type="checkbox" style="margin-right: 5px;margin-bottom: 5px" class="btn btn-secondary"
-                   name="filterDate" value="lastmonth"> Last month
+          <div class="col form-inline">
+            <div style="margin-right: 10px">
+              <input type="checkbox" style="margin-right: 5px;margin-bottom: 5px" class="btn btn-secondary" checked
+                     name="filterDates" value="all"> All time
+            </div>
+
+            <div style="margin-right: 10px">
+              <input type="checkbox" style="margin-right: 5px;margin-bottom: 5px" class="btn btn-secondary"
+                     name="filterDates" value="last24hrs"> Last 24 hrs
+            </div>
+            <div style="margin-right: 10px">
+              <input type="checkbox" style="margin-right: 5px;margin-bottom: 5px" class="btn btn-secondary"
+                     name="filterDates" value="last3days"> Last 3 days
+            </div>
+            <div style="margin-right: 10px">
+              <input type="checkbox" style="margin-right: 5px;margin-bottom: 5px" class="btn btn-secondary"
+                     name="filterDates" value="last7days"> Last 7 days
+            </div>
+            <div style="margin-right: 10px">
+              <input type="checkbox" style="margin-right: 5px;margin-bottom: 5px" class="btn btn-secondary"
+                     name="filterDates" value="last14days"> Last 14 days
+            </div>
+            <div style="margin-right: 10px">
+              <input type="checkbox" style="margin-right: 5px;margin-bottom: 5px" class="btn btn-secondary"
+                     name="filterDates" value="last30days"> Last 30 days
+            </div>
           </div>
         </div>
         <br>
@@ -185,97 +210,113 @@
 
         <div class="row">
           <p style="text-align: left"><b>Author</b></p>
-        </div>
-        <div class="row">
-          <div style="margin-right: 10px">
-            <input type="radio" name="filterAuthor" style="margin-right: 5px;margin-bottom: 5px"
-                   class="btn btn-secondary" checked (click)="selectAuthor('all')"> All authors
+          <div class="col form-inline">
+            <div style="margin-right: 10px">
+              <input type="radio" name="filterAuthor" style="margin-right: 5px;margin-bottom: 5px"
+                     class="btn btn-secondary" checked (click)="selectAuthor('all')"> All authors
+            </div>
+            <div style="margin-right: 10px">
+              <input type="radio" name="filterAuthor" style="margin-right: 5px;margin-bottom: 5px"
+                     class="btn btn-secondary" (click)="selectAuthor('instructorsOnly')"> Instructors only
+            </div>
+            <div style="margin-right: 10px">
+              <input type="radio" name="filterAuthor" style="margin-right: 5px;margin-bottom: 5px"
+                     class="btn btn-secondary" (click)="selectAuthor('studentsOnly')"> Students only
+            </div>
+
+            <div style="margin-right: 10px">
+              <input type="radio" name="filterAuthor" style="margin-right: 5px;margin-bottom: 5px"
+                     class="btn btn-secondary" (click)="selectAuthor('authorName')"> Author's name contains
+            </div>
+            <input *ngIf="filterAuthorSelection === 'authorName'" type="text" id="authorNameContains"
+                   placeholder=" e.g. John">
           </div>
         </div>
-        <div class="row">
-          <div style="margin-right: 10px">
-            <input type="radio" name="filterAuthor" style="margin-right: 5px;margin-bottom: 5px"
-                   class="btn btn-secondary" (click)="selectAuthor('instructorsOnly')"> Instructors only
-          </div>
-        </div>
-        <div class="row">
-          <div style="margin-right: 10px">
-            <input type="radio" name="filterAuthor" style="margin-right: 5px;margin-bottom: 5px"
-                   class="btn btn-secondary" (click)="selectAuthor('studentsOnly')"> Students only
-          </div>
-        </div>
-        <div class="row">
-          <div style="margin-right: 10px">
-            <input type="radio" name="filterAuthor" style="margin-right: 5px;margin-bottom: 5px"
-                   class="btn btn-secondary" (click)="selectAuthor('authorName')"> Author's name contains
-          </div>
-          <input type="text" id="authorNameContains">
-        </div>
-        <br>
       </div>
     </div>
   </div>
   <br>
-
-
   <div class="row" *ngIf="showFilter || showSearch">
     <button *ngIf="isQuerying" class="btn btn-outline-danger" style="margin-right: 5px" (click)="clearQuery()">Clear
       query
     </button>
-    <button class="btn btn-primary" (click)="query()">Submit</button>
+    <button *ngIf="!isQuerying" class="btn btn-primary" (click)="query()">Submit</button>
   </div>
+
+
 </div>
 
 <br>
-<br>
 
 
-
-
-
-
-
-
-
-<div class="container" *ngFor="let questionRoot of course.questionRootList">
-  <div class="row" style="border-top: solid 1pt lightgrey;padding-top: 2%">
-    <div class="col-xs-2 align-self-center" style="text-align: right;">
-      <p *ngIf="questionRoot.likeCount != 0"><b>{{questionRoot.likeCount}}</b> pts</p>
-      <p>
-        <fa-icon [icon]="faEye"></fa-icon>&nbsp;&nbsp;{{questionRoot.viewCount}}
-      <p>
-        <fa-icon [icon]="faCommentAlt"></fa-icon>&nbsp;&nbsp;{{qrIdqraCountMap.get(questionRoot.id)}}
-      <p>
-        <fa-icon [icon]="faCommentMedical"></fa-icon>&nbsp;&nbsp;{{qrIdfqCountMap.get(questionRoot.id)}}
-      </p>
-    </div>
-    <div class="col" [routerLink]="'/course/' + questionRoot.courseId + '/post/' + questionRoot.id">
-      <div class="container">
-        <div class="row">
-          <h5><b> {{questionRoot.title}}</b></h5>
-        </div>
-        <div class="row" [innerHTML]="questionRoot.content">
-        </div>
-
-        <div class="row">
-          <div *ngIf="questionRoot.authorType == 'INSTRUCTOR'" class="btn-sm btn-danger" style="margin-right: 5px">
-            INSTRUCTOR POST
+<div *ngIf="course != undefined">
+  <div class="container" *ngFor="let questionRoot of course.questionRootList">
+    <div class="row" style="border-top: solid 1pt lightgrey;padding-top: 2%">
+      <div *ngIf="!isViewCompact" class="col-xs-2 align-self-center" style="text-align: right;">
+        <p *ngIf="questionRoot.likeCount != 0"><b>{{questionRoot.likeCount}}</b> pts</p>
+        <p>
+          <fa-icon [icon]="faEye"></fa-icon>&nbsp;&nbsp;{{questionRoot.viewCount}}
+        <p>
+          <fa-icon [icon]="faCommentAlt"></fa-icon>&nbsp;&nbsp;{{qrIdqraCountMap.get(questionRoot.id)}}
+        <p>
+          <fa-icon [icon]="faCommentMedical"></fa-icon>&nbsp;&nbsp;{{qrIdfqCountMap.get(questionRoot.id)}}
+        </p>
+      </div>
+      <div class="col" [routerLink]="'/course/' + questionRoot.courseId + '/post/' + questionRoot.id">
+        <div class="container">
+          <div class="row">
+            <h5><b> {{questionRoot.title}}</b></h5>
           </div>
-          <div *ngIf="questionRoot.folder != null" class="btn-sm btn-secondary"
-               style="margin-right: 5px">{{questionRoot.folder}}</div>
-          <p>{{questionRoothasInstructorAnswerMap[questionRoot.id]}}</p>
-          <div *ngIf="questionRoot.hasInstructorAnswer && questionRoot.authorType != 'INSTRUCTOR'"
-               class="btn-sm btn-success" style="margin-right: 5px">Has Instructor Answer
+          <div *ngIf="!isViewCompact" class="row" [innerHTML]="questionRoot.content">
           </div>
-          <div *ngIf="!questionRoot.hasInstructorAnswer && questionRoot.authorType != 'INSTRUCTOR'"
-               class="btn-sm btn-warning" style="margin-right: 5px">No Instructor Answer
+
+          <div class="row">
+            <div *ngIf="user != undefined && !questionRoot.viewerIds.includes(user.email)" class="btn-sm btn-primary"
+                 style="margin-right: 5px">
+              NEW
+            </div>
+            <div *ngIf="questionRoot.authorType == 'INSTRUCTOR'" class="btn-sm btn-primary" style="margin-right: 5px">
+              INSTRUCTOR POST
+            </div>
+            <div *ngIf="questionRoot.folder != null" class="btn-sm btn-secondary"
+                 style="margin-right: 5px">{{questionRoot.folder}}</div>
+            <p>{{questionRoothasInstructorAnswerMap[questionRoot.id]}}</p>
+            <div *ngIf="questionRoot.hasInstructorAnswer && questionRoot.authorType != 'INSTRUCTOR'"
+                 class="btn-sm btn-success" style="margin-right: 5px">Instructor Answer
+            </div>
+            <div *ngIf="!questionRoot.hasInstructorAnswer && questionRoot.authorType != 'INSTRUCTOR'
+          && questionRoot.questionRootAnswerList.length != 0"
+                 class="btn-sm btn-warning" style="margin-right: 5px">No Instructor Answer
+            </div>
+            <div *ngIf="questionRoot.questionRootAnswerList.length === 0"
+                 class="btn-sm btn-danger" style="margin-right: 5px">No Answer
+            </div>
+            <div *ngIf="isMarkedAGoodQuestion(questionRoot)"
+                 class="btn-sm" style="margin-right: 5px; background-color: purple; color: gold">Great Question
+            </div>
+            <div *ngIf="hasInstructorEndorsedAnswer(questionRoot)"
+                 class="btn-sm btn-primary" style="margin-right: 5px; background-color: blue; color: white">
+              Instructor-Endorsed Answer
+            </div>
+            <div *ngIf="hasGreatFollowup(questionRoot)"
+                 class="btn-sm btn-primary" style="margin-right: 5px; background-color: gold; color: red">Great
+              Followup
+            </div>
           </div>
+
+
+          <div class="row float-right">
+            <div>
+              <p style="text-align: right"><b>{{questionRoot.authorName}}</b> <b
+                *ngIf="questionRoot.authorType === 'INSTRUCTOR'" style="color: green"> (Instructor)</b>
+                on  {{getDate(questionRoot.postDate)}}</p>
+            </div>
+          </div>
+          <br>
         </div>
-        <br>
       </div>
     </div>
   </div>
 </div>
 <br>
 <br>
-

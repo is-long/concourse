@@ -13,7 +13,9 @@ import com.concourse.tools.StringTools;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.file.CopyOption;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 /*
@@ -38,10 +40,12 @@ public class CourseController {
     private QuestionRootRepository questionRootRepository;
     private EmailServices emailServices;
     private QuestionRootAnswerRepository questionRootAnswerRepository;
+    private QuestionRootAnswerReplyRepository questionRootAnswerReplyRepository;
     private FollowupQuestionRepository followupQuestionRepository;
+    private FollowupAnswerRepository followupAnswerRepository;
 
     public CourseController(UserRepository userRepository, CourseRepository courseRepository, SessionRepository sessionRepository, PostRepository postRepository,
-                            SessionController sessionController, StudentRepository studentRepository, InstructorRepository instructorRepository, CourseInviteTokenRepository courseInviteTokenRepository, QuestionRootRepository questionRootRepository, EmailServices emailServices, QuestionRootAnswerRepository questionRootAnswerRepository, FollowupQuestionRepository followupQuestionRepository) {
+                            SessionController sessionController, StudentRepository studentRepository, InstructorRepository instructorRepository, CourseInviteTokenRepository courseInviteTokenRepository, QuestionRootRepository questionRootRepository, EmailServices emailServices, QuestionRootAnswerRepository questionRootAnswerRepository, QuestionRootAnswerReplyRepository questionRootAnswerReplyRepository, FollowupQuestionRepository followupQuestionRepository, FollowupAnswerRepository followupAnswerRepository) {
         this.userRepository = userRepository;
         this.courseRepository = courseRepository;
         this.sessionRepository = sessionRepository;
@@ -53,7 +57,9 @@ public class CourseController {
         this.questionRootRepository = questionRootRepository;
         this.emailServices = emailServices;
         this.questionRootAnswerRepository = questionRootAnswerRepository;
+        this.questionRootAnswerReplyRepository = questionRootAnswerReplyRepository;
         this.followupQuestionRepository = followupQuestionRepository;
+        this.followupAnswerRepository = followupAnswerRepository;
     }
 
 
@@ -807,4 +813,248 @@ public class CourseController {
     }
 
 
+    @PostMapping("{courseId}/post/{postId}/delete")
+    public boolean delete(
+            @PathVariable("courseId") String courseId,
+            @PathVariable("postId") String postId,
+            @RequestParam("postType") String postType,
+            @RequestBody Session session
+    ) {
+        //check if is the instructor OR the user's own post
+        if (session == null || courseId.length() != 32 || postId.length() != 32 || postType == null) {
+            log.info("Failed to delete post: Invalid arguments");
+            return false;
+        }
+
+        Optional<Session> optionalSession = sessionRepository.findById(session.getSessionId());
+        if (!optionalSession.isPresent() || !optionalSession.get().getEmail().equals(session.getEmail())) {
+            log.info("Failed to delete post: Invalid session");
+            return false;
+        }
+
+        User user = userRepository.findById(session.getEmail()).get();  //if session exists, user exists
+
+        Optional<Post> optionalPost = postRepository.findById(postId);
+        if (!optionalPost.isPresent() || !optionalPost.get().getCourseId().equals(courseId)) {
+            log.info("Failed to delete post: Post not found or invalid");
+            return false;
+        }
+
+        if (!user.getRole().equals("INSTRUCTOR") && !optionalPost.get().getAuthorUserId().equals(session.getEmail())) {
+            log.info("Failed to delete post: Unauthorized");
+            return false;
+        }
+
+        switch (postType) {
+            case "QUESTIONROOT":
+                Optional<QuestionRoot> optionalQuestionRoot = questionRootRepository.findById(postId);
+                if (!optionalQuestionRoot.isPresent()) {
+                    log.info("Failed to delete post: Invalid type");
+                    return false;
+                }
+                Course c = courseRepository.findById(courseId).get();
+                c.removeQuestionRoot(optionalQuestionRoot.get());
+                courseRepository.save(c);
+
+                questionRootRepository.deleteById(postId);
+                log.info("REMOVED QUESTION ROOT: " + postId);
+                return true;
+            case "QUESTIONROOTANSWER": {
+                Optional<QuestionRootAnswer> optionalQuestionRootAnswer = questionRootAnswerRepository.findById(postId);
+                if (!optionalQuestionRootAnswer.isPresent()) {
+                    log.info("Failed to delete post: Invalid type");
+                    return false;
+                }
+                QuestionRoot qr = questionRootRepository.findById(optionalQuestionRootAnswer.get().getQuestionRootId()).get();
+                qr.removeQuestionRootAnswer(optionalQuestionRootAnswer.get());
+                questionRootRepository.save(qr);
+
+                questionRootAnswerRepository.deleteById(postId);
+                log.info("REMOVED QUESTION ROOT ANSWER: " + postId);
+                return true;
+            }
+            case "QUESTIONROOTANSWERREPLY":
+                Optional<QuestionRootAnswerReply> optionalQuestionRootAnswerReply = questionRootAnswerReplyRepository.findById(postId);
+                if (!optionalQuestionRootAnswerReply.isPresent()) {
+                    log.info("Failed to delete post: Invalid type");
+                    return false;
+                }
+                QuestionRootAnswer qra = questionRootAnswerRepository.findById(
+                        optionalQuestionRootAnswerReply.get().getQuestionRootAnswerId()).get();
+                qra.removeQuestionRootAnswerReply(optionalQuestionRootAnswerReply.get());
+
+                questionRootAnswerRepository.save(qra);
+
+                questionRootAnswerReplyRepository.deleteById(postId);
+                log.info("REMOVED QUESTION ROOT ANSWER REPLY: " + postId);
+                return true;
+            case "FOLLOWUPQUESTION": {
+                Optional<FollowupQuestion> optionalFollowupQuestion = followupQuestionRepository.findById(postId);
+                if (!optionalFollowupQuestion.isPresent()) {
+                    log.info("Failed to delete post: Invalid type");
+                    return false;
+                }
+                QuestionRoot qr = questionRootRepository.findById(optionalFollowupQuestion.get().getQuestionRootId()).get();
+                qr.removeFollowupQuestion(optionalFollowupQuestion.get());
+                questionRootRepository.save(qr);
+
+
+                followupQuestionRepository.deleteById(postId);
+                log.info("REMOVED FOLLOWUP QUESTION: " + postId);
+                return true;
+
+            }
+            case "FOLLOWUPANSWER":
+
+                Optional<FollowupAnswer> optionalFollowupAnswer = followupAnswerRepository.findById(postId);
+                if (!optionalFollowupAnswer.isPresent()) {
+                    log.info("Failed to delete post: Invalid type");
+                    return false;
+                }
+                FollowupQuestion fq = followupQuestionRepository.findById(optionalFollowupAnswer.get().getFollowupQuestionId()).get();
+                fq.removeFollowupAnswer(optionalFollowupAnswer.get());
+                followupQuestionRepository.save(fq);
+
+                followupAnswerRepository.deleteById(postId);
+                log.info("REMOVED FOLLOWUP ANSWER: " + postId);
+                return true;
+
+        }
+        log.info("Failed to delete post: Invalid post type");
+        return false;
+    }
+
+    @PostMapping("{courseId}/post/{postId}/checkOwnership")
+    public boolean checkPostOwnership(
+            @PathVariable("courseId") String courseId,
+            @PathVariable("postId") String postId,
+            @RequestBody Session session
+    ) {
+        if (session == null || courseId.length() != 32 || postId.length() != 32
+        ) {
+            log.info("Failed to check ownership: Invalid arguments");
+            return false;
+        }
+
+        Optional<Session> optionalSession = sessionRepository.findById(session.getSessionId());
+        if (!optionalSession.isPresent() || !optionalSession.get().getEmail().equals(session.getEmail())) {
+            log.info("Failed to check ownership: Invalid session");
+            return false;
+        }
+
+        User user = userRepository.findById(session.getEmail()).get();  //if session exists, user exists
+
+        Optional<Post> optionalPost = postRepository.findById(postId);
+        if (!optionalPost.isPresent()) {
+            log.info("Failed to check ownership: Post not found or invalid");
+            return false;
+        }
+        Post post = optionalPost.get();
+        if (!post.getCourseId().equals(courseId)) {
+            log.info("Failed to check ownership: Post course does not exists");
+            return false;
+        }
+
+        if (!optionalPost.get().getAuthorUserId().equals(session.getEmail())) {
+            log.info("Failed to check ownership: Unauthorized");
+            return false;
+        }
+        return true;
+    }
+
+
+    @PostMapping("{courseId}/post/{postId}/get")
+    public Post getPost(
+            @PathVariable("courseId") String courseId,
+            @PathVariable("postId") String postId,
+            @RequestBody Session session) {
+        if (checkMember(courseId, session.getSessionId()) == null) {
+            log.info("Failed to get post: User is not a member of the course or has invalid session");
+            return null;
+        }
+        Optional<Post> optionalPost = postRepository.findById(postId);
+        if (!optionalPost.isPresent()) {
+            log.info("Failed to get post: Post not found");
+            return null;
+        }
+
+        Post post = optionalPost.get();
+        log.info("FETCH POST: " + post);
+        return post;
+    }
+
+    @PostMapping("{courseId}/post/{postId}/edit")
+    public boolean editPost(
+            @PathVariable("courseId") String courseId,
+            @PathVariable("postId") String postId,
+            @RequestParam("sessionId") String sessionId,
+            @RequestBody Post modifiedPost) {
+        Session session = sessionRepository.findById(sessionId).get();
+        if (!checkPostOwnership(courseId, postId, session)) {
+            log.info("Failed to edit post: Unauthorized user");
+            return false;
+        }
+
+        Optional<Post> optionalPost = postRepository.findById(postId);
+        if (!optionalPost.isPresent()) {
+            log.info("Failed to edit post: Post does not exist");
+            return false;
+        }
+
+        Post post = optionalPost.get();
+        post.setContent(modifiedPost.getContent());
+        postRepository.save(post);
+        log.info("EDIT POST: " + post);
+        return true;
+    }
+
+
+    @PostMapping("{courseId}/invite")
+    public boolean sendInvitation(
+            @PathVariable("courseId") String courseId,
+            @RequestBody List<String> emails,
+            @RequestParam("sessionId") String sessionId,
+            @RequestParam("role") String role
+    ){
+        //Validate is an instructor of courseId
+        Optional<Session> optionalSession = sessionRepository.findById(sessionId);
+        if (!optionalSession.isPresent()){
+            log.info("Failed to send invitation: Invalid session");
+            return false;
+        }
+        Optional<Course> optionalCourse = courseRepository.findById(courseId);
+        if (!optionalCourse.isPresent()){
+            log.info("Failed to send invitation: Invalid course");
+            return false;
+        }
+        Course course = optionalCourse.get();
+        if (!course.getInstructorIds().contains(optionalSession.get().getEmail())){
+            log.info("Failed to send invitation: User not an instructor of the course");
+            return false;
+        }
+        if (!role.equals("INSTRUCTOR") && !role.equals("STUDENT")){
+            log.info("Failed to send invitation: Invalid role");
+            return false;
+        }
+
+        //Check if email in the list is valid
+        HashMap<String, CourseInviteToken> emailTokenMap = new HashMap<>();
+        for (String email : emails){
+            //if email is never registered before
+            if (!course.getInstructorIds().contains(email) && !course.getStudentIds().contains(email)){
+                CourseInviteToken token = new CourseInviteToken();
+                token.setCourseId(course.getId());
+                token.setRole(role);
+                token.setEmail(email);
+                token.setInviteId(StringTools.generateID(32) + StringTools.generateID(32));
+                courseInviteTokenRepository.save(token);
+                emailTokenMap.put(email, token);
+            }
+        }
+
+        //send email token
+        emailServices.sendCourseInviteToken(emailTokenMap, course.getName());
+
+        return true;
+    }
 }

@@ -10,6 +10,7 @@ import {QuestionRootAnswer} from "../shared/post/question-root-answer";
 import {QuestionRootAnswerReply} from "../shared/post/question-root-answer-reply";
 import {FollowupQuestion} from "../shared/post/followup-question";
 import {FollowupAnswer} from "../shared/post/followup-answer";
+import {Post} from "../shared/post/post";
 
 @Injectable({
   providedIn: 'root'
@@ -87,6 +88,34 @@ export class CourseService {
   addCourseFolders(courseId: string, newFolders: string[]) {
     return this.http.post(this.url + "/course/" + courseId + "/addfolders?sessionId=" +
       this.authService.getSession().sessionId, newFolders);
+  }
+
+
+
+  deletePost(courseId: string, postId: string, postType: string){
+    return this.http.post(this.url + "/course/" + courseId + "/post/" + postId + "/delete?postType=" + postType,
+      this.authService.getSession());
+  }
+
+  isOwnPost(courseId: string, postId: string){
+    return this.http.post(this.url + "/course/" + courseId + "/post/" + postId + "/checkOwnership",
+      this.authService.getSession());
+  }
+
+  getPost(courseId: string, postId: string){
+    return this.http.post<any>(this.url + "/course/" + courseId + "/post/" + postId + "/get",
+      this.authService.getSession());
+  }
+
+  editPost(courseId: string, postId: string, post: Post){
+    return this.http.post<any>(this.url + "/course/" + courseId + "/post/" + postId
+      + "/edit?sessionId=" + this.authService.getSession().sessionId, post
+      );
+  }
+
+  sendInvitation(courseId: string, emails: string[], role: string){
+    return this.http.post(this.url + "/course/" + courseId + '/invite?sessionId='
+      + this.authService.getSession().sessionId +'&role=' + role, emails);
   }
 }
 

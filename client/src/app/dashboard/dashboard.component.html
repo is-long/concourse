@@ -18,7 +18,8 @@
             <h6 class="text-success card-text"><b>5</b> new posts</h6>
             <h6 class="text-success card-text"><b>10</b> unread posts</h6>
             <br>
-            <button class="btn btn-primary" [routerLink]="'/course/' + course.id">Go to Course</button>
+            <button class="btn btn-primary" [routerLink]="'/course/' + course.id" style="margin-right: 5px">Go to Course</button>
+            <button *ngIf="isInstructor" class="btn btn-secondary" [routerLink]="'/course/' + course.id + '/settings'" >Settings</button>
           </div>
         </div>
       </div>

@@ -15,7 +15,6 @@ export class CreateCourseComponent implements OnInit {
   instructorEmailString: string;
   studentEmailString: string;
 
-
   constructor(private courseService: CourseService, private router:Router) { }
 
   ngOnInit() { }
@@ -60,6 +59,7 @@ export class CreateCourseComponent implements OnInit {
     return emailArr;
   }
 
+  //TODO:
   isValidEmail(email: string): boolean {
     return true;
   }

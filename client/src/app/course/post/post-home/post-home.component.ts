@@ -5,6 +5,9 @@ import {Course} from "../../../shared/course";
 import {QuestionRoot} from "../../../shared/post/question-root";
 import {User} from "../../../shared/user/user";
 import {UserService} from "../../../services/user.service";
+import {QuestionRootAnswer} from "../../../shared/post/question-root-answer";
+import {faEllipsisH} from "@fortawesome/free-solid-svg-icons";
+import {Post} from "../../../shared/post/post";
 
 
 @Component({
@@ -20,6 +23,7 @@ export class PostHomeComponent implements OnInit {
   showAddAnswerEditor: boolean = false;
   kv = new Map();
   user: User;
+  faEllipsisH = faEllipsisH;
 
 
   constructor(private router: Router, private courseService: CourseService, private userService: UserService) {
@@ -40,7 +44,7 @@ export class PostHomeComponent implements OnInit {
                 break;
               }
             }
-            if (this.questionRoot === null) {
+            if (this.questionRoot === undefined) {
               this.router.navigateByUrl('/course/' + this.courseId)
             }
             for (let qr of this.course.questionRootList) {
@@ -51,6 +55,8 @@ export class PostHomeComponent implements OnInit {
                 this.kv.set(fq.id, false);
               }
             }
+
+            this.sortBy('new');
 
             this.userService.getSelf().subscribe(
               data => {
@@ -65,25 +71,96 @@ export class PostHomeComponent implements OnInit {
   ngOnInit() {
   }
 
+  instructorUpvoteCount(post: Post){
+    let result: number = 0;
+    for (let instructorId of this.course.instructorIds){
+      let pref: number = post.likesUserIDMap[instructorId];
+      if (pref != null && pref === 1){
+        result++;
+      }
+    }
+    return result;
+  }
+
+
+
+
+  editAnswer(postId: string){
+    this.router.navigateByUrl('/course/' + this.courseId + '/post/' + postId + '/edit')
+  }
+
+  deletePost(postId: string, postType: string){
+    this.courseService.deletePost(this.courseId, postId, postType).subscribe(
+      data => {
+        window.location.reload();
+      }
+    );
+  }
+
+  reportAnswer(qraId: string, postType: string){
+
+  }
+
+
+
+
+
+
+
+
+
+
+  sortBy(selection:string){
+    //most discussion first
+    if (selection === "discussion"){
+      this.questionRoot.questionRootAnswerList.sort((qra1: QuestionRootAnswer, qra2: QuestionRootAnswer) => {
+        return qra2.questionRootAnswerReplyList.length - qra1.questionRootAnswerReplyList.length
+      });
+    }
+
+    //newest first
+    if (selection === "new"){
+      this.questionRoot.questionRootAnswerList.sort((qra1: QuestionRootAnswer, qra2: QuestionRootAnswer) => {
+        return qra2.postDate - qra1.postDate
+      });
+    }
+
+    //oldest first
+    if (selection === "old"){
+      this.questionRoot.questionRootAnswerList.sort((qra1: QuestionRootAnswer, qra2: QuestionRootAnswer) => {
+        return qra1.postDate - qra2.postDate
+      });
+    }
+
+    //most view first
+    if (selection === "vote"){
+      this.questionRoot.questionRootAnswerList.sort((qra1: QuestionRootAnswer, qra2: QuestionRootAnswer) => {
+        return qra2.likeCount - qra1.likeCount
+      });
+    }
+  }
+
+
+
   toggleEditor(id: string) {
     this.kv.set(id, !this.kv.get(id));
   }
 
   getDate(time: number) {
-    var options = {year: 'numeric', month: 'short', day: 'numeric'};
-    return new Date(time).toLocaleDateString("en-US", options);
-  }
-
-  getDaysAgo(time: number) {
     let daysAgo = Math.floor((new Date().getTime() - time) / 86400000);
     if (daysAgo === 0) {
+      if (new Date().getTime() - time < 60 * 60000){
+        return Math.floor((new Date().getTime() - time) / 60000) +  " minutes ago"
+      } else if (new Date().getTime() - time < 24 * 60 * 60000){
+        return Math.floor((new Date().getTime() - time) / (60 * 60000)) +  " hours ago"
+      }
       return "Today"
     } else if (daysAgo === 1) {
       return "Yesterday"
     } else if (daysAgo < 30) {
       return daysAgo.toString() + " days ago"
     } else {
-      return this.getDate(time);
+      return new Date(time).toLocaleDateString("en-US", {year: 'numeric', month: 'short', day: 'numeric'});
     }
   }
 

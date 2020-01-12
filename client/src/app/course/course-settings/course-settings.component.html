@@ -1,49 +1,68 @@
 <div class="container">
   <br>
-  <h1>Course settings</h1>
+  <h3>Course Settings: {{course.name}}</h3>
+  <hr>
   <div class="row">
+
     <div class="col">
       <br>
-      <label for="inviteStudents">Invite additional students</label><br>
-      <textarea name="inviteStudents" id="inviteStudents" style="width: 100%" rows="3"
-                placeholder="Enter students email, separated by comma"></textarea>
-      <br>
-      <button class="btn btn-primary">Invite</button>
-    </div>
-  </div>
-
-  <div class="row">
-    <div class="col">
-      <br>
-      <label for="inviteInstructor">Invite additional instructor</label><br>
-      <textarea name="inviteInstructor" id="inviteInstructor" style="width: 100%" rows="3"
-                placeholder="Enter students email, separated by comma"></textarea>
-      <br>
-      <button class="btn btn-primary">Invite</button>
-    </div>
-  </div>
-
-
-  <div class="row">
-    <div class="col">
-      <br>
-      <p>Currently Available Folders: </p>
+      <b>Currently enrolled students ({{course.studentIds.length}})</b>
       <div class="row">
         <div class="col">
-          <button disabled style="margin-right: 5px; margin-top: 5px" class="btn btn-secondary" *ngFor="let folderName of folders">{{folderName}}</button>
+          <p disabled style="margin-right: 5px; margin-top: 5px"><i>{{course.studentIds.join(', ')}}</i></p>
         </div>
       </div>
+      <label for="inviteStudents"><b class="text-primary" (click)="showInviteStudent = !showInviteStudent">Invite additional students</b></label><br>
+      <textarea *ngIf="showInviteStudent" name="inviteStudents" id="inviteStudents" style="width: 100%" rows="3"
+                placeholder="Enter students email, separated by comma" [(ngModel)]="newStudentsEmailString"></textarea>
       <br>
+      <button *ngIf="showInviteStudent" class="btn btn-primary" (click)="addStudents()">Invite</button>
+    </div>
+  </div>
+  <hr>
 
-      <label for="postFolders">Add Question Folders</label><br>
-      <textarea name="postFolders" id="postFolders" style="width: 100%" rows="3" [(ngModel)]="newFolderString"
+  <div class="row">
+    <div class="col">
+      <br>
+      <b>Currently registered instructors ({{course.instructorIds.length}})</b>
+      <div class="row">
+        <div class="col">
+          <p disabled style="margin-right: 5px; margin-top: 5px"><i>{{course.instructorIds.join(', ')}}</i></p>
+        </div>
+      </div>
+
+
+      <label  for="inviteInstructor"><b class="text-primary" (click)="showInviteInstructor = !showInviteInstructor">Invite additional instructor</b></label><br>
+      <textarea *ngIf="showInviteInstructor" name="inviteInstructor" id="inviteInstructor" style="width: 100%" rows="3"
+                placeholder="Enter students email, separated by comma"
+      [(ngModel)]="newInstructorsEmailString"></textarea>
+      <br>
+      <button *ngIf="showInviteInstructor" class="btn btn-primary" (click)="addInstructors()">Invite</button>
+    </div>
+  </div>
+  <hr>
+
+
+  <div class="row">
+    <div class="col">
+      <br>
+      <p><b>Currently Available Folders: </b></p>
+      <div class="row">
+        <div class="col">
+          <p style="margin-right: 5px; margin-top: 5px"
+                  ><i>{{folders.join(', ')}}</i></p>
+        </div>
+      </div>
+
+      <label for="postFolders"><b class="text-primary" (click)="showQuestionFolder = !showQuestionFolder">Add Folders</b></label><br>
+      <textarea *ngIf="showQuestionFolder"  id="postFolders" style="width: 100%" rows="3" [(ngModel)]="newFolderString"
                 name="newFolderString"></textarea>
       <br>
-      <button class="btn btn-primary" (click)="addFolders()">Add Folder</button>
-      <br>
+      <button *ngIf="showQuestionFolder" class="btn btn-primary" (click)="addFolders()">Add Folder</button>
       <br>
     </div>
   </div>
+  <hr>
 </div>
 
 <br><br>
