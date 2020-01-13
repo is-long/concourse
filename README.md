@@ -37,28 +37,36 @@ The front-end is built with [Angular](https://angular.io/). I chose Angular as i
 ### Gallery
 
 ---
+
 <br>
 
 ![alt text](client/src/assets/screenshot.png)
 
 <br>
+
 ---
+
 <br>
 
 ![alt text](client/src/assets/screenshot2.png)
 
 <br>
+
 ---
+
 <br>
 
 ![alt text](client/src/assets/screenshot3.png)
 
 <br>
+
 ---
+
 <br>
 
 ![alt text](client/src/assets/screenshot4.png)
 
 <br>
+
 ---
 
