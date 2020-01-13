@@ -10,7 +10,9 @@ _Concourse is a web-based collaborative course communication platform designed t
 [Concourse is live!](http://dllqc5uhws7ff.cloudfront.net/home)
 
 <br>
+
 ---
+
 <br>
 
 ### Inspiration
