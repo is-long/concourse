@@ -22,7 +22,6 @@ import java.util.*;
 @RequestMapping("course")
 @CrossOrigin(origins = "*", allowCredentials = "true", allowedHeaders = "*")
 public class CourseController {
-
     private UserRepository userRepository;
     private CourseRepository courseRepository;
     private SessionRepository sessionRepository;
@@ -33,9 +32,12 @@ public class CourseController {
     private CourseInviteTokenRepository courseInviteTokenRepository;
     private EmailServices emailServices;
 
-    public CourseController(UserRepository userRepository, CourseRepository courseRepository,
-                            SessionRepository sessionRepository, PostRepository postRepository,
-                            SessionController sessionController, StudentRepository studentRepository,
+    public CourseController(UserRepository userRepository,
+                            CourseRepository courseRepository,
+                            SessionRepository sessionRepository,
+                            PostRepository postRepository,
+                            SessionController sessionController,
+                            StudentRepository studentRepository,
                             InstructorRepository instructorRepository,
                             CourseInviteTokenRepository courseInviteTokenRepository,
                             EmailServices emailServices) {
@@ -49,6 +51,8 @@ public class CourseController {
         this.courseInviteTokenRepository = courseInviteTokenRepository;
         this.emailServices = emailServices;
 
+        //Create mock course. All students will be enrolled in Mock Course
+        courseRepository.createMockCourse();
     }
 
 
@@ -56,165 +60,146 @@ public class CourseController {
     //ACCESS COURSE
     //============================================================================
 
-    @GetMapping("all")
-    public List<Course> getAll() {
-        return (List<Course>) courseRepository.findAll();
-    }
-
+    /**
+     * Returns the course if the user is involved in the course.
+     *
+     * @param courseId 32-bit courseId of the course
+     * @param session user's sessionId
+     * @return the Course of the corresponding courseId
+     */
     @PostMapping("{courseId}/get")
     public Course getCourse(@PathVariable("courseId") String courseId, @RequestBody Session session) {
-        //validate session
-        if (!sessionController.validate(session)) {
-            log.info("Failed to get course: Invalid session.");
-            return null;
-        }
-
-        //check course exists
-        Optional<Course> optionalCourse = this.courseRepository.findById(courseId);  //null already checked by check member
-        if (!optionalCourse.isPresent()) {
-            log.info("Failed to get course: Course does not exist.");
-            return null;
-        }
-
         //check the user is involved in the course
         if (checkCourseMembership(courseId, session.getSessionId()) == null) {
-            log.info("User is not involved in the course.");
+            log.info("Invalid session or User is not involved in the course.");
             return null;
         }
 
-        Course course = optionalCourse.get();
+        Course course = courseRepository.getCourseElseNull(courseId);
         log.info("FETCHING COURSE: " + course);
         return course;
     }
 
+    /**
+     * Returns the folders of the courses
+     *
+     * @param courseId 32-bit courseId of the course
+     * @param session user's sessionId
+     * @return the folders of the course
+     */
     @PostMapping("{courseId}/getfolders")
-    public List<String> getFolders( @PathVariable("courseId") String courseId, @RequestBody Session session
-    ) {
-        //validate session
-        if (!sessionController.validate(session)) {
-            log.info("Failed to get course: Invalid session.");
-            return null;
-        }
-
-        //check course exists
-        Optional<Course> optionalCourse = this.courseRepository.findById(courseId);  //null already checked by check member
-        if (!optionalCourse.isPresent()) {
-            log.info("Failed to get course: Course does not exist.");
-            return null;
-        }
-
-        //check user is involved in course, course exists
+    public List<String> getFolders(@PathVariable("courseId") String courseId, @RequestBody Session session) {
+        //check user is involved in course
         if (checkCourseMembership(courseId, session.getSessionId()) == null) {
-            log.info("Failed to add view: Invalid session or user is not in the course");
+            log.info("Failed to get folders: Invalid session or user is not involved in the course");
             return null;
         }
-
-        List<String> folders = optionalCourse.get().getFolders();
+        List<String> folders = courseRepository.getCourseElseNull(courseId).getFolders();
         log.info("RETURNING FOLDERS: " + folders);
         return folders;
     }
 
-
-    /*
-       Before calling, make sure,
-         1. Session exists
-         2. Course exists
-    */
+    /**
+     * Check if the user is involved as a student or instructor in the course.
+     *
+     * @param courseId  32-bit courseId of the course
+     * @param sessionId 64-bit user's sessionId
+     * @return the user the user is involved as a student or instructor in the course
+     */
     @GetMapping("{courseId}/checkmember/{sessionId}")
     public User checkCourseMembership(@PathVariable("courseId") String courseId, @PathVariable String sessionId) {
-        String userEmail = sessionRepository.findById(sessionId).get().getEmail();
-        Course course = courseRepository.findById(courseId).get();
+        //check if the session is valid
+        Session session = sessionRepository.getSessionElseNull(sessionId);
+        if (session == null) {
+            log.info("Failed to check membership: Session does not exist.");
+            return null;
+        }
 
-        if (course.getInstructorIds().contains(userEmail)) {
+        //check if the course exists
+        Course course = courseRepository.getCourseElseNull(courseId);
+        if (course == null) {
+            log.info("Failed to check membership: Course does not exist.");
+            return null;
+        }
+
+        String userId = session.getEmail();
+        //check if the user is one of the course's intructors
+        if (course.getInstructorIds().contains(userId)) {
             log.info("VALID MEMBER: INSTRUCTOR.");
-            return instructorRepository.findById(userEmail).get();
+            return instructorRepository.getInstructorElseNull(userId);
+        }
+        //else check if the user is one of the course's students
+        if (course.getStudentIds().contains(userId)) {
+            log.info("VALID MEMBER: STUDENT.");
+            return studentRepository.getStudentElseNull(userId);
         }
 
-        if (course.getStudentIds().contains(userEmail)) {
-            log.info("VALID MEMBER: STUDENT.");
-            return studentRepository.findById(userEmail).get();
-        }
         log.info("NOT A MEMBER");
         return null;
     }
-
 
     //============================================================================
     //MODIFY COURSE
     //============================================================================
 
+    /**
+     * Gets called when user enters inviteId and courseId in Join Course page (/course/join). If inviteId and courseId
+     * are correct, the user is added to the course.
+     *
+     * @param courseId  32-bit courseId of the course
+     * @param sessionId 64-bit user's sessionId
+     * @param inviteId  64-bit inviteId sent by the inviting instructor to the user's email
+     * @return true if user joins course successfully, false otherwise
+     */
     @GetMapping("{courseId}/join")
     public boolean joinCourse(@PathVariable("courseId") String courseId,
                               @RequestParam("sessionId") String sessionId,
                               @RequestParam("inviteId") String inviteId) {
-        //quick session/inviteId check
-        if (courseId.length() != 32 || sessionId == null || sessionId.length() != 64 || inviteId == null || inviteId.length() != 64) {
-            log.info("Failed to join course: Invalid session/inviteId.");
-            return false;
-        }
-
         //check if the session is valid
-        if (!sessionRepository.findById(sessionId).isPresent()) {
+        Session session = sessionRepository.getSessionElseNull(sessionId);
+        if (session == null) {
             log.info("Failed to join course: Session does not exist.");
             return false;
         }
 
         //check if the course exists
-        Optional<Course> optionalCourse = courseRepository.findById(courseId);
-        if (!optionalCourse.isPresent()) {
+        Course course = courseRepository.getCourseElseNull(courseId);
+        if (course == null) {
             log.info("Failed to join course: Course does not exist.");
             return false;
         }
 
         //check if the invite id exists
-        Optional<CourseInviteToken> optionalCourseInviteToken = courseInviteTokenRepository.findById(inviteId);
-        if (!optionalCourseInviteToken.isPresent()) {
+        CourseInviteToken courseInviteToken = courseInviteTokenRepository.getCourseInviteTokenElseNull(inviteId);
+        if (courseInviteToken == null) {
             log.info("Failed to join course: InviteId does not exist.");
             return false;
         }
 
-        CourseInviteToken courseInviteToken = optionalCourseInviteToken.get();
-        Course course = optionalCourse.get();
-
         //check the role
         if (courseInviteToken.getRole().equals("INSTRUCTOR")) {
             //add instructor to course
-            List<String> instructorIds = course.getInstructorIds();
-            instructorIds.add(courseInviteToken.getEmail());
-            course.setInstructorIds(instructorIds);
+            course.addInstructor(courseInviteToken.getEmail());
             courseRepository.save(course);  //update
             log.info("ADDED INSTRUCTOR TO COURSE");
 
-            //Bug source: what if user is registered as student instead?
-
             //add courseInstructed to instructor
             Instructor instructor = instructorRepository.findById(courseInviteToken.getEmail()).get();
-            List<String> courseInstructedIds = instructor.getCourseInstructedIds();
-            courseInstructedIds.add(courseId);
-            instructor.setCourseInstructedIds(courseInstructedIds);
+            instructor.addCourseInstructedIds(courseId);
             instructorRepository.save(instructor);
             log.info("ADDED COURSE INSTRUCTED TO INSTRUCTOR");
 
             courseInviteTokenRepository.delete(courseInviteToken); //clear token
             return true;
         } else if (courseInviteToken.getRole().equals("STUDENT")) {
-
-            System.out.println("Course before: " + course);
-            //add instructor to course
-            List<String> studentIds = course.getStudentIds();
-            studentIds.add(courseInviteToken.getEmail());
-            course.setStudentIds(studentIds);
-            System.out.println("Course after: " + course);
+            //add student to course
+            course.addStudent(courseInviteToken.getEmail());
             courseRepository.save(course);  //update
             log.info("ADDED STUDENT TO COURSE");
 
-            //Bug source: what if user is registered as instructor instead?
-
             //add courseEnrolled to student
             Student student = studentRepository.findById(courseInviteToken.getEmail()).get();
-            List<String> courseEnrolledIds = student.getCourseEnrolledIds();
-            courseEnrolledIds.add(courseId);
-            student.setCourseEnrolledIds(courseEnrolledIds);
+            student.addCourseEnrolledIds(courseId);
             studentRepository.save(student);
             log.info("ADDED COURSE ENROLLED TO STUDENT");
 
@@ -225,25 +210,46 @@ public class CourseController {
         return false;
     }
 
+    /**
+     * Add folders to the course. Folders are used to for tagging and filtering posts. Folders can be added only by
+     * instructor of the course in the Course Settings page.
+     *
+     * @param courseId   32-bit courseId of the course
+     * @param sessionId  64-bit user's sessionId
+     * @param newFolders List of the name of the new folders.
+     * @return all folders in the course after addition
+     */
     @PostMapping("{courseId}/addfolders")
     public List<String> addFolders(
             @PathVariable("courseId") String courseId,
             @RequestParam("sessionId") String sessionId,
-            @RequestBody List<String> newFolders
-    ) {
+            @RequestBody List<String> newFolders) {
 
-        //check session, is involved
-        log.info("Trying to addFolders : " + newFolders);
-        if (courseId.length() != 32 || sessionId == null || sessionId.length() != 64 || newFolders == null) {
-            log.info("Failed to addFolders: Invalid arguments");
+        if (newFolders == null) {
+            log.info("Failed to add folders: Folder is null.");
             return null;
         }
-        //check user is involved in course, course exists
-        if (checkCourseMembership(courseId, sessionId) == null) {
+
+        //check if the session is valid
+        Session session = sessionRepository.getSessionElseNull(sessionId);
+        if (session == null) {
+            log.info("Failed to add folders: Session does not exist.");
+            return null;
+        }
+
+        //check course exists
+        Course course = courseRepository.getCourseElseNull(courseId);
+        if (course == null) {
+            log.info("Failed to get course: Course does not exist.");
+            return null;
+        }
+
+        //check user is an instructor in the course
+        if (course.getInstructorIds().contains(session.getEmail())) {
             log.info("Failed to add folders: Invalid session or user is not in the course");
             return null;
         }
-        Course course = courseRepository.findById(courseId).get();
+
         course.addFolders(newFolders);
         courseRepository.save(course);
 
@@ -251,32 +257,43 @@ public class CourseController {
         return course.getFolders();
     }
 
-
+    /**
+     * Called when an instructor creates a new Course. A new course will contain name, description, list of instructor
+     * and student emails. For each instructor and student, send an invitation email to join the course.
+     * Instructor/student will be added to Course only after invitation is confirmed.
+     *
+     * @param course    the new course to be added
+     * @param sessionId 64-bit of the user's sessionId
+     * @return the newly created course
+     */
     @PostMapping("new/{sessionId}")
     public Course addCourse(@RequestBody Course course, @PathVariable("sessionId") String sessionId) {
-        log.info("Trying to create course: " + course);
-
-        //Check course fields
-        if (course == null) {
-            log.info("Failed to create course: Supplied course is null.");
+        if (course == null
+                || sessionId == null
+                || course.getName() == null
+                || course.getDescription() == null
+                || course.getInstructorIds() == null
+                || course.getStudentIds() == null
+                || course.getQuestionRootList() == null
+                || course.getName().length() == 0
+                || course.getDescription().length() == 0
+                || course.getInstructorIds().size() == 0
+                || course.getQuestionRootList().size() != 0) {
+            log.info("Failed to create course: Arguments supplied (other than courseId) contains null or invalid field .");
             return null;
         }
 
-        if (course.getName() == null ||
-                course.getDescription() == null ||
-                course.getInstructorIds() == null || course.getStudentIds() == null ||
-                course.getQuestionRootList() == null) {
-            log.info("Failed to create course: Arguments supplied contains null (other than courseId).");
+        //Check session exists
+        Session session = sessionRepository.getSessionElseNull(sessionId);
+        if (session == null) {
+            log.info("Failed to create course: Session is invalid.");
             return null;
         }
 
-        if (course.getName().length() == 0 || course.getDescription().length() == 0 ||
-                course.getInstructorIds().size() == 0) {
-            log.info("Failed to create course: Argument name, desc, or instructorIds is of length 0 or empty.");
-            return null;
-        }
-        if (course.getQuestionRootList().size() != 0) {
-            log.info("Failed to create course: Argument questionRootIds is non empty on course initialization.");
+        //Check the requester is an Instructor
+        Instructor instructor = instructorRepository.getInstructorElseNull(session.getEmail());
+        if (instructor == null) {
+            log.info("Failed to create course: User does not exist or not an instructor.");
             return null;
         }
 
@@ -289,114 +306,93 @@ public class CourseController {
             return null;
         }
 
-        Optional<Session> s = sessionRepository.findById(sessionId);
-        if (!s.isPresent()) {
-            log.info("Failed to create course: Session is invalid.");
-            return null;
-        }
-
-        Optional<Instructor> instructorOptional = instructorRepository.findById(s.get().getEmail());
-        if (!instructorOptional.isPresent()) {
-            log.info("Failed to create course: User does not exist.");
-            return null;
-        }
         //set course id
         course.setId(StringTools.generateID(32));
 
-        //update instructor creator courseinstructed
-        Instructor instructor = instructorOptional.get();
-        List<String> courseInstructedIds = instructor.getCourseInstructedIds();
-        courseInstructedIds.add(course.getId());
-        instructor.setCourseInstructedIds(courseInstructedIds);
-        userRepository.save(instructor);
+        //After course created, now send invitation emails to TAs, Students
+        Map<String, CourseInviteToken> emailTokenMap = new HashMap<>();
+
+        //prepare invitation to Instructors
+        for (String email : course.getInstructorIds()) {
+            //send to TAs/Instructor EXCEPT the creator
+            if (!email.equals(course.getCreatorInstructorId())) {
+                CourseInviteToken token = new CourseInviteToken(course.getId(), "INSTRUCTOR", email);
+                courseInviteTokenRepository.save(token);
+                emailTokenMap.put(email, token);
+            }
+        }
+
+        //prepare invitation to Students
+        for (String email : course.getStudentIds()) {
+            CourseInviteToken token = new CourseInviteToken(course.getId(), "STUDENT", email);
+            courseInviteTokenRepository.save(token);
+            emailTokenMap.put(email, token);
+        }
+
+        //send token
+        emailServices.sendCourseInviteToken(emailTokenMap, course.getName());
+
+        //edit course's instructor, student list, then save course
+        course.setStudentIds(new ArrayList<>());                            //since no student accepted invitation yet
+        course.setInstructorIds(Collections.singletonList(course.getCreatorInstructorId()));   //save only the creator
+        courseRepository.save(course);
+        log.info("COURSE CREATED: " + course);
+
+        //update creator's courseInstructedIds
+        instructor.addCourseInstructedIds(course.getId());
         instructorRepository.save(instructor);  //update instructor, necessary?
         log.info("COURSE INSTRUCTED ADDED TO : " + instructor);
 
-        //AFTER COURSE CREATED, SEND INVITATION
-        Map<String, CourseInviteToken> emailTokenMap = new HashMap<>();
-
-        //but remove self (the creator instructor) first
-        List<String> instructorIdList = course.getInstructorIds();
-        instructorIdList.remove(course.getCreatorInstructorId());
-        course.setInstructorIds(instructorIdList);
-
-        //to Instructor
-        for (String email : course.getInstructorIds()) {
-            //Create and save token
-            CourseInviteToken token = new CourseInviteToken();
-            token.setCourseId(course.getId());
-            token.setRole("INSTRUCTOR");
-            token.setEmail(email);
-            token.setInviteId(StringTools.generateID(32) + StringTools.generateID(32));
-            courseInviteTokenRepository.save(token);
-            emailTokenMap.put(email, token);
-        }
-
-        //to Student
-        for (String email : course.getStudentIds()) {
-            //Create and save token
-            CourseInviteToken token = new CourseInviteToken();
-            token.setCourseId(course.getId());
-            token.setRole("STUDENT");
-            token.setEmail(email);
-            token.setInviteId(StringTools.generateID(32) + StringTools.generateID(32));
-            courseInviteTokenRepository.save(token);
-            emailTokenMap.put(email, token);
-        }
-
-        //send email token
-        emailServices.sendCourseInviteToken(emailTokenMap, course.getName());
-
-        //edit the instructor, student, then save course
-        List<String> instructorIds = new ArrayList<>();
-        instructorIds.add(course.getCreatorInstructorId());    //only add the the creator instructor, since no creator accepted invitation yet
-        course.setInstructorIds(instructorIds);
-        course.setStudentIds(new ArrayList<>());                            //since no student accepted invitation yet
-        courseRepository.save(course);
-        log.info("COURSE CREATED: " + course);
         return course;
     }
 
 
+    /**
+     * Delete course and all its contents. Only creator of the course can delete the course.
+     *
+     * @param courseId 32-bit courseId of the course
+     * @param session  Session of the requester
+     * @return true if the course is successfully deleted, otherwise false
+     */
     @PostMapping("{courseId}/delete/course")
     @Transactional
     public boolean deleteCourse(@PathVariable("courseId") String courseId, @RequestBody Session session) {
+        //Check session
         if (!sessionController.validate(session)) {
             log.info("Failed to delete course : Invalid session");
             return false;
         }
 
         //Check if course exists
-        Optional<Course> optionalCourse = courseRepository.findById(courseId);
-        if (!optionalCourse.isPresent()) {
+        Course course = courseRepository.getCourseElseNull(courseId);
+        if (course == null) {
             log.info("Failed to delete course : Course does not exist");
             return false;
         }
-        Course course = optionalCourse.get();
 
-        //check if user is the creator of the course, the instructor of the course to be deleted
+        //Check if user is the creator of the course
         if (!course.getCreatorInstructorId().equals(session.getEmail())) {
-            log.info("Failed to delete course : You're not the creator of " + courseId);
+            log.info("Failed to delete course : You're not the creator of " + course.getName());
             return false;
         }
 
-        //remove course from all instructor, student, posts
+        //Remove course from all instructors' courseInstructed list
         for (User u : userRepository.findAllById(course.getInstructorIds())) {
             Instructor instructor = (Instructor) u;
-            List<String> courseInstructed = instructor.getCourseInstructedIds();
-            courseInstructed.remove(courseId);
-            instructor.setCourseInstructedIds(courseInstructed);
+            instructor.removeCourseInstructedIds(courseId);
             userRepository.save(instructor);
             log.info("COURSE DELETED FROM INSTRUCTOR: " + instructor);
         }
+
+        //Remove course from all students' courseEnrolled list
         for (User u : userRepository.findAllById(course.getStudentIds())) {
             Student student = (Student) u;
-            List<String> courseEnrolled = student.getCourseEnrolledIds();
-            courseEnrolled.remove(courseId);
-            student.setCourseEnrolledIds(courseEnrolled);
+            student.removeCourseEnrolledIds(courseId);
             userRepository.save(student);
             log.info("COURSE DELETED FROM STUDENT: " + student);
         }
+
+        //Delete all posts associated with the course
         for (Post post : postRepository.findPostsByCourseId(courseId)) {
             postRepository.delete(post);
             log.info("POST DELETED: " + post);
@@ -408,6 +404,17 @@ public class CourseController {
     }
 
 
+    /**
+     * Send invitation emails to join a course. Recipient will receive email with invitationId and instructions on how
+     * to login/register to Concourse and join the course using the inviteId. Only instructors can send invitation
+     * emails through Course Settings.
+     *
+     * @param courseId  32-bit courseId of the course
+     * @param emails    list of recipient emails
+     * @param sessionId 32-bit char of the sender's session
+     * @param role      the recipients' role in the course (STUDENT/INSTRUCTOR)
+     * @return true if at invitation was sent, false otherwise
+     */
     @PostMapping("{courseId}/invite")
     public boolean sendInvitation(
             @PathVariable("courseId") String courseId,
@@ -415,37 +422,37 @@ public class CourseController {
             @RequestParam("sessionId") String sessionId,
             @RequestParam("role") String role
     ) {
-        //Validate is an instructor of courseId
-        Optional<Session> optionalSession = sessionRepository.findById(sessionId);
-        if (!optionalSession.isPresent()) {
+        //Check if the session is valid
+        Session session = sessionRepository.getSessionElseNull(sessionId);
+        if (session == null) {
             log.info("Failed to send invitation: Invalid session");
             return false;
         }
-        Optional<Course> optionalCourse = courseRepository.findById(courseId);
-        if (!optionalCourse.isPresent()) {
+
+        //Check if the course is present
+        Course course = courseRepository.getCourseElseNull(courseId);
+        if (course == null) {
             log.info("Failed to send invitation: Invalid course");
             return false;
         }
-        Course course = optionalCourse.get();
-        if (!course.getInstructorIds().contains(optionalSession.get().getEmail())) {
+
+        //Check if user is an instructor of the courseId (only instructors can invite students/other instructors)
+        if (!course.getInstructorIds().contains(session.getEmail())) {
             log.info("Failed to send invitation: User not an instructor of the course");
             return false;
         }
+
+        //check the role of the invitee
         if (!role.equals("INSTRUCTOR") && !role.equals("STUDENT")) {
             log.info("Failed to send invitation: Invalid role");
             return false;
         }
 
-        //Check if email in the list is valid
         HashMap<String, CourseInviteToken> emailTokenMap = new HashMap<>();
         for (String email : emails) {
             //if email is never registered before
             if (!course.getInstructorIds().contains(email) && !course.getStudentIds().contains(email)) {
-                CourseInviteToken token = new CourseInviteToken();
-                token.setCourseId(course.getId());
-                token.setRole(role);
-                token.setEmail(email);
-                token.setInviteId(StringTools.generateID(32) + StringTools.generateID(32));
+                CourseInviteToken token = new CourseInviteToken(course.getId(), role, email);
                 courseInviteTokenRepository.save(token);
                 emailTokenMap.put(email, token);
             }
@@ -457,36 +464,45 @@ public class CourseController {
         return true;
     }
 
+    /**
+     * Remove students from the course. Only instructors can remove students through Course Settings.
+     *
+     * @param courseId  32-bit courseId of the course
+     * @param emails    list of emails of the students to be removed
+     * @param sessionId 32-bit char of the sender's session
+     * @return true if the students are removed from the course, false otherwise
+     */
     @PostMapping("{courseId}/delete/students")
     public boolean removeStudents(
             @PathVariable("courseId") String courseId,
             @RequestBody List<String> emails,
             @RequestParam("sessionId") String sessionId) {
-        Optional<Session> optionalSession = sessionRepository.findById(sessionId);
-        if (!optionalSession.isPresent()) {
+        //check if session is valid
+        Session session = sessionRepository.getSessionElseNull(sessionId);
+        if (session == null) {
             log.info("Failed to remove students: Invalid session");
             return false;
         }
-        Session session = optionalSession.get();
 
+        //check if the email object is valid
         if (emails == null || emails.size() == 0) {
             log.info("Failed to remove students: No emails found");
             return false;
         }
 
-        Optional<Course> optionalCourse = courseRepository.findById(courseId);
-        if (!optionalCourse.isPresent()) {
+        //check if the course exists
+        Course course = courseRepository.getCourseElseNull(courseId);
+        if (course == null) {
             log.info("Failed to remove students: Invalid course");
             return false;
         }
-        Course course = optionalCourse.get();
+
+        //check if the requester's is an instructor of the course
         if (!course.getInstructorIds().contains(session.getEmail())) {
             log.info("Failed to remove students: Not an instructor");
             return false;
         }
 
-        log.info("emails:" + emails);
-        log.info("studentIds:" + emails);
         //remove students from course list
         List<String> studentIds = course.getStudentIds();
         studentIds.removeAll(emails);
@@ -494,22 +510,25 @@ public class CourseController {
         log.info("USER REMOVED FROM COURSE: " + course);
         courseRepository.save(course);
 
-        //remove course from student's enrolled course list
+        //remove course from students' enrolled course list and delete students' posts in the course
         for (String email : emails) {
-            Optional<Student> optionalStudent = studentRepository.findById(email);
-            if (optionalStudent.isPresent()) {
-                Student student = optionalStudent.get();
+            Student student = studentRepository.getStudentElseNull(email);
+            if (student != null) {
                 student.removeCourseEnrolledIds(courseId);
                 studentRepository.save(student);
 
                 //delete content of the posts belonging to the students
-                List<Post> studentPostsInCourse = postRepository.findPostsByAuthorUserIdAndCourseId(student.getEmail(), courseId);
+                List<Post> studentPostsInCourse =
+                        postRepository.findPostsByAuthorUserIdAndCourseId(student.getEmail(), courseId);
                 for (Post p : studentPostsInCourse) {
-                    //p.setContent("[DELETED]");  //dont remove content
+                    //remove contents and attributes of posts posted by the deleted student
+                    p.setContent("[DELETED]");
                     p.setAuthorName("[DELETED]");
                     p.setAuthorUserId("[DELETED]");
                     postRepository.save(p);
                 }
+            } else {
+                log.info("Failed to delete student: Student with " + email + " does not exists");
             }
         }
         return true;

@@ -35,7 +35,6 @@ public class Course {
     @OneToMany
     private List<QuestionRoot> questionRootList = new ArrayList<>();
 
-
     public List<QuestionRoot> addQuestionRoot(QuestionRoot questionRoot) {
         this.questionRootList.add(questionRoot);
         return this.questionRootList;

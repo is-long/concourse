@@ -1,7 +1,9 @@
 package com.concourse.controllers;
 
+import com.concourse.models.Course;
 import com.concourse.models.tokens.ConfirmationToken;
 import com.concourse.models.Session;
+import com.concourse.models.tokens.CourseInviteToken;
 import com.concourse.models.users.Instructor;
 import com.concourse.models.users.Student;
 import com.concourse.models.users.User;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,8 +36,11 @@ public class UserController {
     private SessionRepository sessionRepository;
     private EmailConfirmationTokenRepository emailConfirmationTokenRepository;
     private PostRepository postRepository;
+    private SessionController sessionController;
+    private CourseInviteTokenRepository courseInviteTokenRepository;
 
-    public UserController(UserRepository userRepository, CourseRepository courseRepository, InstructorRepository instructorRepository, StudentRepository studentRepository, SessionRepository sessionRepository, EmailConfirmationTokenRepository emailConfirmationTokenRepository, PostRepository postRepository) {
+
+    public UserController(UserRepository userRepository, CourseRepository courseRepository, InstructorRepository instructorRepository, StudentRepository studentRepository, SessionRepository sessionRepository, EmailConfirmationTokenRepository emailConfirmationTokenRepository, PostRepository postRepository, SessionController sessionController, CourseInviteTokenRepository courseInviteTokenRepository) {
         this.userRepository = userRepository;
         this.courseRepository = courseRepository;
         this.instructorRepository = instructorRepository;
@@ -42,30 +48,23 @@ public class UserController {
         this.sessionRepository = sessionRepository;
         this.emailConfirmationTokenRepository = emailConfirmationTokenRepository;
         this.postRepository = postRepository;
+        this.sessionController = sessionController;
+        this.courseInviteTokenRepository = courseInviteTokenRepository;
     }
 
     //===================================================
-    // ACCESS USER; TODO BLOCK ACCESS
+    // ACCESS USER;
     //===================================================
 
     @PostMapping("self")
     public User getSelf(@RequestBody Session session) {
-        if (session == null || session.getSessionId() == null || session.getEmail() == null) {
-            log.info("Failed to check instructor role: Session has nulls");
+        if (!sessionController.validate(session)) {
+            log.info("Failed to get user: Invalid session");
             return null;
         }
-        Optional<Session> optionalSession = sessionRepository.findById(session.getSessionId());
-        if (!optionalSession.isPresent()) {
-            log.info("Failed to check instructor role: Session does not exist");
-            return null;
-        }
-        Optional<User> optionalUser = userRepository.findById(optionalSession.get().getEmail());
-        if (optionalUser.isPresent()) {
-            log.info("RETURNING SELF " + optionalUser.get());
-            return optionalUser.get();
-        }
-        log.info("User does not exist?");
-        return null;
+        User user = userRepository.findById(session.getEmail()).get();
+        log.info("RETURNING SELF " + user);
+        return user;
     }
 
     @PostMapping("registration/check")
@@ -131,6 +130,16 @@ public class UserController {
                 studentRepository.save(student);
                 log.info("STUDENT EMAIL CONFIRMED: " + student);
                 emailConfirmationTokenRepository.delete(token.get());
+
+
+                //Send invite email to mock course to new student
+                Course mockCourse = courseRepository.getMockCourse();
+                HashMap<String, CourseInviteToken> emailTokenMap = new HashMap<>();
+                CourseInviteToken inviteToken = new CourseInviteToken(mockCourse.getId(), "STUDENT", student.getEmail());
+                courseInviteTokenRepository.save(inviteToken);
+                emailTokenMap.put(student.getEmail(), inviteToken);
+                emailServices.sendCourseInviteToken(emailTokenMap, mockCourse.getName());
+
                 return true;
             }
             if (optionalInstructor.isPresent()) {
@@ -160,6 +169,7 @@ public class UserController {
                 token.setCode(StringTools.generateID(32) + StringTools.generateID(32));
                 token.setEmail(instructor.getEmail());
             }
+
             emailConfirmationTokenRepository.save(token);
             emailServices.sendConfirmationToken(token.getCode(), instructor.getEmail());
 
@@ -173,7 +183,6 @@ public class UserController {
     @PostMapping("registration/new/student")
     public Student addStudent(@RequestBody Student student) {
         log.info("TRYING TO ADD STUDENT: " + student);
-        log.info("TRYING TO ADD USER : " + (User) student);
         if (!checkRegistration(student)) {
             ConfirmationToken token =
                     emailConfirmationTokenRepository.findConfirmationTokenByEmail(student.getEmail());

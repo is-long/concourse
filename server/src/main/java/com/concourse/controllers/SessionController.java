@@ -49,9 +49,9 @@ public class SessionController {
         log.info("Session to validate: " + session);
 
         if (session == null){
+           log.info("Invalid session: Session is null");
            return false;
         }
-
         if (session.getEmail() == null || !emailServices.isValidEmailAddress(session.getEmail())) {
             log.info("Invalid session: Email is invalid");
             return false;
@@ -77,6 +77,15 @@ public class SessionController {
         }
         log.info("VALID SESSION");
         return true;
+    }
+
+    public boolean validate(String sessionId){
+        Optional<Session> s = sessionRepository.findById(sessionId);
+        if (!s.isPresent()){
+            log.info("Invalid session: Session does not exist");
+            return false;
+        }
+        return validate(s.get());
     }
 
     @PostMapping("purge")
