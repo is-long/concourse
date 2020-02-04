@@ -83,7 +83,7 @@
 
   <div class="row" style=" padding: 2% 0 2% 0;">
     <div class="col">
-      <button *ngIf="user.email === course.creatorInstructorId" class="btn btn-danger"
+      <button *ngIf="user != null && user.email === course.creatorInstructorId" class="btn btn-danger"
       (click)="deleteCourse()">Delete Course</button>
     </div>
   </div>

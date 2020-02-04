@@ -1,10 +1,8 @@
 package com.concourse.models.posts;
 
 import com.concourse.models.users.User;
-import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;

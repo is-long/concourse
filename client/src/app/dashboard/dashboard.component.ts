@@ -5,7 +5,6 @@ import {UserService} from "../services/user.service";
 import {Course} from "../shared/course";
 import {CourseService} from "../services/course.service";
 import {Post} from "../shared/post/post";
-import {QuestionRoot} from "../shared/post/question-root";
 
 @Component({
   selector: 'app-dashboard',
@@ -36,8 +35,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
             for (let courseId of courseInstructedIds) {
               this.courseService.getCourse(courseId).subscribe(
                 course => {
-                  console.log('course is ');
-                  console.log(course);
                   if (course != null) {
                     this.courses.push(<Course>course)
                   }
@@ -84,10 +81,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
       }
     }
     return count;
-  }
-
-  isGoodQuestion(){
-
   }
 
   isMarkedGood(post: Post, instructorIds: string[]) {

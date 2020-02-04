@@ -51,10 +51,11 @@ public class CourseController {
         this.courseInviteTokenRepository = courseInviteTokenRepository;
         this.emailServices = emailServices;
 
-        //Create mock course. All students will be enrolled in Mock Course
+
+
+        //Create mock course. All new students will be enrolled in Mock Course
         courseRepository.createMockCourse();
     }
-
 
     //============================================================================
     //ACCESS COURSE
@@ -77,6 +78,7 @@ public class CourseController {
 
         Course course = courseRepository.getCourseElseNull(courseId);
         log.info("FETCHING COURSE: " + course);
+
         return course;
     }
 
@@ -536,3 +538,4 @@ public class CourseController {
         return true;
     }
 }
+
