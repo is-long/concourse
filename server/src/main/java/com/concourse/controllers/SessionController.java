@@ -19,11 +19,11 @@ public class SessionController {
     @Autowired
     private SessionRepository sessionRepository;
 
-    @Autowired
-    private EmailServices emailServices;
+    private final EmailServices emailServices;
 
-    public SessionController(SessionRepository sessionRepository) {
+    public SessionController(SessionRepository sessionRepository, EmailServices emailServices) {
         this.sessionRepository = sessionRepository;
+        this.emailServices = emailServices;
     }
 
     /**
@@ -47,6 +47,11 @@ public class SessionController {
     @PostMapping("validate")
     public boolean validate(@RequestBody Session session){
         log.info("Session to validate: " + session);
+
+        if (session == null){
+           return false;
+        }
+
         if (session.getEmail() == null || !emailServices.isValidEmailAddress(session.getEmail())) {
             log.info("Invalid session: Email is invalid");
             return false;

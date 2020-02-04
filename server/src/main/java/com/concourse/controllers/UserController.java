@@ -42,34 +42,11 @@ public class UserController {
         this.sessionRepository = sessionRepository;
         this.emailConfirmationTokenRepository = emailConfirmationTokenRepository;
         this.postRepository = postRepository;
-
-
     }
 
     //===================================================
     // ACCESS USER; TODO BLOCK ACCESS
     //===================================================
-
-
-    @GetMapping("all")
-    public List<User> getAll() {
-        return (List<User>) userRepository.findAll();
-    }
-
-    @GetMapping("all/instructor")
-    public List<Instructor> getAllInstructors() {
-        return (List<Instructor>) instructorRepository.findAll();
-    }
-
-    @GetMapping("all/student")
-    public List<Student> getAllStudents() {
-        return (List<Student>) studentRepository.findAll();
-    }
-
-    @GetMapping("all/confirmationToken")
-    public List<ConfirmationToken> getConfirmationToken() {
-        return (List<ConfirmationToken>) emailConfirmationTokenRepository.findAll();
-    }
 
     @PostMapping("self")
     public User getSelf(@RequestBody Session session) {
