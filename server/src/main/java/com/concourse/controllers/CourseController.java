@@ -108,6 +108,8 @@ public class CourseController {
      */
     @GetMapping("{courseId}/checkmember/{sessionId}")
     public User checkCourseMembership(@PathVariable("courseId") String courseId, @PathVariable String sessionId) {
+        if (courseId == null|| sessionId == null) return null;
+
         //check if the session is valid
         Session session = sessionRepository.getSessionElseNull(sessionId);
         if (session == null) {

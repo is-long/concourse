@@ -48,17 +48,22 @@ public class Post {
     }
 
     public void like(String userId, int value) {
-        if (value != 0){
-            likesUserIDMap.put(userId, value);
-        } else {
-            likesUserIDMap.remove(userId);
-        }
+        Integer vote = likesUserIDMap.get(userId);
 
-        //update likecount
-        int sum = 0;
-        for (int i: likesUserIDMap.values()) {
-            sum += i;
+        //if user has never liked/disliked the post before
+        if (vote == null) {
+            likesUserIDMap.put(userId, value);
+            likeCount += value;
+        } else {
+            likeCount -= vote;  //undo old like
+
+            //undo like/dislike
+            if (value == 0){
+                likesUserIDMap.remove(userId);
+            } else {
+               likesUserIDMap.put(userId, value);
+               likeCount += value;
+            }
         }
-        likeCount = sum;
     }
 }

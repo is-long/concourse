@@ -11,7 +11,7 @@ import java.util.Optional;
 public interface SessionRepository extends CrudRepository<Session, String> {
 
     default Session getSessionElseNull(String sessionId){
-
+        if (sessionId == null) return null;
         Optional<Session> optionalSession = findById(sessionId);
         return optionalSession.orElse(null);
     }

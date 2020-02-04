@@ -49,42 +49,77 @@ public class PostController {
     }
 
     //============================================================================
+    // ACCESS POSTS;
+    //============================================================================
+
+    /**
+     * Access a post. User must be involved in the course to be able to fetch the post.
+     * @param courseId id of the course
+     * @param postId id of the post
+     * @param session user's session
+     * @return post object if user is authorized and post exists, otherwise null
+     */
+    @PostMapping("{courseId}/post/{postId}/get")
+    public Post getPost(
+            @PathVariable("courseId") String courseId,
+            @PathVariable("postId") String postId,
+            @RequestBody Session session) {
+        if (courseController.checkCourseMembership(courseId, session.getSessionId()) == null) {
+            log.info("Failed to get post: User is not a member of the course or has invalid session");
+            return null;
+        }
+
+        Optional<Post> optionalPost = postRepository.findById(postId);
+        if (!optionalPost.isPresent()) {
+            log.info("Failed to get post: Post not found");
+            return null;
+        }
+
+        Post post = optionalPost.get();
+        log.info("FETCH POST: " + post);
+        return post;
+    }
+
+    //============================================================================
     //NEW POSTS;
     //============================================================================
 
+    /**
+     * Adds a new question root. Only students/instructors involved in the course can add a question.
+     *
+     * @param courseId id of the course
+     * @param sessionId sessionId of the poster
+     * @param questionRoot the question root to be added
+     * @return the added question root if addition was successful, otherwise null
+     */
     @PostMapping("{courseId}/post/new/questionroot")
     public QuestionRoot addQuestionRoot(@PathVariable("courseId") String courseId, @RequestParam("sessionId") String sessionId,
                                         @RequestBody QuestionRoot questionRoot) {
-        log.info("Trying to add question root: " + questionRoot);
-        if (courseId.length() != 32 || sessionId.length() != 64 || questionRoot == null) {
-            log.info("Failed to add question root: Invalid arguments");
-            return null;
-        }
-
-        //check if session is valid
-        //check if user is involved
-        if (courseController.checkCourseMembership(courseId, sessionId) == null) {
-            log.info("Failed to add question root: Invalid session or user is not in the course");
-            return null;
-        }
-
-        //check if question root is not empty
-        if (!questionRoot.getCourseId().equals(courseId)) {
-            log.info("Failed to add question root: Course ids don't match");
-            return null;
-        }
-        //check if author exists
-        Optional<User> optionalUser = userRepository.findById(questionRoot.getAuthorUserId());
-        if (questionRoot.getAuthorUserId() == null || !optionalUser.isPresent()) {
-            log.info("Failed to add question root: Invalid author");
-            return null;
-        }
-        if (questionRoot.getContent() == null || questionRoot.getContent().length() == 0
-                || questionRoot.getTitle() == null || questionRoot.getTitle().length() == 0) {
+        if (questionRoot.getContent() == null
+                || questionRoot.getContent().length() == 0
+                || questionRoot.getTitle() == null
+                || questionRoot.getTitle().length() == 0
+                || questionRoot.getAuthorUserId() == null) {
             log.info("Failed to add question root: Empty content/title");
             return null;
         }
-        User user = optionalUser.get();
+
+        //check if course exists, session is valid, and user is involved
+        User user = courseController.checkCourseMembership(courseId, sessionId);
+        if (user == null) {
+            log.info("Failed to add question root: Invalid session or user");
+            return null;
+        }
+
+        //check if the properties match
+        Course course = courseRepository.getCourseElseNull(courseId);
+        if (!questionRoot.getCourseId().equals(courseId)
+                || !questionRoot.getAuthorUserId().equals(user.getEmail())
+                || !course.getFolders().contains(questionRoot.getFolder())) {
+            log.info("Failed to add question root: Field property mismatch");
+            return null;
+        }
+
         questionRoot.setId(StringTools.generateID(32));
         questionRoot.setAuthorName(user.getName());
         questionRoot.setAuthorType(user.getRole());
@@ -94,6 +129,7 @@ public class PostController {
         questionRoot.setFollowupQuestionList(new ArrayList<>());
         questionRoot.setQuestionRootAnswerList(new ArrayList<>());
 
+        //save/update objects
         questionRootRepository.save(questionRoot);
         courseRepository.saveQuestionRootToCourse(courseId, questionRoot);
         log.info("QUESTION ROOT ADDED: " + questionRoot);
@@ -101,52 +137,51 @@ public class PostController {
         return questionRoot;
     }
 
+    /**
+     * Adds a new question root answer. Only students/instructors involved in the course can add a question root answer.
+     *
+     * @param courseId id of the course
+     * @param sessionId sessionId of the poster
+     * @param questionRootAnswer the question root answer to be added
+     * @return the added question root answer if addition was successful, otherwise null
+     */
     @PostMapping("{courseId}/post/new/questionrootanswer")
     public QuestionRootAnswer addQuestionRootAnswer(@PathVariable("courseId") String courseId,
                                                     @RequestParam("sessionId") String sessionId,
                                                     @RequestBody QuestionRootAnswer questionRootAnswer) {
-        //check session, is involved
-        log.info("Trying to add question root answer: " + questionRootAnswer);
-        if (courseId.length() != 32 || sessionId.length() != 64 || questionRootAnswer == null) {
-            log.info("Failed to add question root: Invalid arguments");
-            return null;
-        }
-        //check user is involved in course
-        if (courseController.checkCourseMembership(courseId, sessionId) == null) {
-            log.info("Failed to add question root answer: Invalid session or user is not in the course");
-            return null;
-        }
         //check questionrootanswer
-        if (questionRootAnswer.getAuthorUserId() == null
-                || questionRootAnswer.getAuthorName() == null
-                || questionRootAnswer.getAuthorType() == null
+        if (questionRootAnswer == null
+                || questionRootAnswer.getAuthorUserId() == null
                 || questionRootAnswer.getQuestionRootId() == null
                 || questionRootAnswer.getContent() == null
                 || questionRootAnswer.getContent().length() == 0
-                || questionRootAnswer.getCourseId() == null) {
+                || questionRootAnswer.getCourseId() == null
+                || !questionRootAnswer.getCourseId().equals(courseId)) {
             log.info("Failed to add question root answer: Invalid question root answer properties");
             return null;
         }
+
+        //check user is involved in course
+        User user = courseController.checkCourseMembership(courseId, sessionId);
+        if (user == null) {
+            log.info("Failed to add question root answer: Invalid session or user is not in the course");
+            return null;
+        }
+        //if involved, set author details from server
+        questionRootAnswer.setAuthorName(user.getName());
+        questionRootAnswer.setAuthorType(user.getRole());
+        questionRootAnswer.setQuestionRootAnswerReplyList(new ArrayList<>());
         questionRootAnswer.setId(new QuestionRootAnswer().getId());
 
         //check parent exists
         Optional<QuestionRoot> optionalQuestionRoot = questionRootRepository.findById(questionRootAnswer.getQuestionRootId());
-        if (!optionalQuestionRoot.isPresent() || !optionalQuestionRoot.get().getCourseId().equals(questionRootAnswer.getCourseId())) {
+        if (!optionalQuestionRoot.isPresent() || !optionalQuestionRoot.get().getCourseId()
+                .equals(questionRootAnswer.getCourseId())) {
             log.info("Failed to add question root answer: Invalid question root parent");
             return null;
         }
 
-        //check author valid
-        Optional<User> optionalUser = userRepository.findById(questionRootAnswer.getAuthorUserId());
-        if (!optionalUser.isPresent()) {
-            log.info("Failed to add question root answer: Invalid author");
-            return null;
-        }
-        //set author details from server
-        questionRootAnswer.setAuthorName(optionalUser.get().getName());
-        questionRootAnswer.setAuthorType(optionalUser.get().getRole());
-        questionRootAnswer.setQuestionRootAnswerReplyList(new ArrayList<>());
-
+        //BEGIN UPDATING/SAVING OBJECTS
         //save answer
         postRepository.save(questionRootAnswer);
 
@@ -164,23 +199,23 @@ public class PostController {
         return questionRootAnswer;
     }
 
+
+    /**
+     * Adds a new question root answer reply. Only students/instructors involved in the course can
+     * add a question root answer reply.
+     *
+     * @param courseId id of the course
+     * @param sessionId sessionId of the poster
+     * @param questionRootAnswerReply the question root answer to be added
+     * @return the added question root answer reply if addition was successful, otherwise null
+     */
     @PostMapping("{courseId}/post/new/questionrootanswerreply")
     public QuestionRootAnswerReply addQuestionRootAnswerReply(@PathVariable("courseId") String courseId,
                                                               @RequestParam("sessionId") String sessionId,
                                                               @RequestBody QuestionRootAnswerReply questionRootAnswerReply) {
-        //check session, is involved
-        log.info("Trying to add question root answer reply: " + questionRootAnswerReply);
-        if (courseId.length() != 32 || sessionId.length() != 64 || questionRootAnswerReply == null) {
-            log.info("Failed to add question root answer reply: Invalid arguments");
-            return null;
-        }
-        //check user is involved in course
-        if (courseController.checkCourseMembership(courseId, sessionId) == null) {
-            log.info("Failed to add question root answer reply: Invalid session or user is not in the course");
-            return null;
-        }
         //check questionrootanswer
-        if (questionRootAnswerReply.getAuthorUserId() == null
+        if (questionRootAnswerReply == null
+                || questionRootAnswerReply.getAuthorUserId() == null
                 || questionRootAnswerReply.getAuthorName() == null
                 || questionRootAnswerReply.getAuthorType() == null
                 || questionRootAnswerReply.getQuestionRootAnswerId() == null
@@ -192,8 +227,14 @@ public class PostController {
             return null;
         }
 
-        //check question root parent answer exists
+        //check user is involved in course
+        User user =  courseController.checkCourseMembership(courseId, sessionId);
+        if (user == null || !user.getEmail().equals(questionRootAnswerReply.getAuthorUserId())) {
+            log.info("Failed to add question root answer reply: Invalid session or user");
+            return null;
+        }
 
+        //check question root parent answer exists
         Optional<QuestionRootAnswer> optionalQuestionRootAnswer = questionRootAnswerRepository.findById(
                 questionRootAnswerReply.getQuestionRootAnswerId());
         if (!optionalQuestionRootAnswer.isPresent()) {
@@ -201,17 +242,9 @@ public class PostController {
             return null;
         }
 
-
-        //check author valid
-        Optional<User> optionalUser = userRepository.findById(questionRootAnswerReply.getAuthorUserId());
-        if (!optionalUser.isPresent()) {
-            log.info("Failed to add followup question: Invalid author");
-            return null;
-        }
-
         //set author details from server
-        questionRootAnswerReply.setAuthorName(optionalUser.get().getName());
-        questionRootAnswerReply.setAuthorType(optionalUser.get().getRole());
+        questionRootAnswerReply.setAuthorName(user.getName());
+        questionRootAnswerReply.setAuthorType(user.getRole());
 
         //save answer
         postRepository.save(questionRootAnswerReply);
@@ -233,6 +266,15 @@ public class PostController {
         return questionRootAnswerReply;
     }
 
+    /**
+     * Adds a new followup question to question root. Only students/instructors involved in the course can
+     * add a followup question.
+     *
+     * @param courseId id of the course
+     * @param sessionId sessionId of the poster
+     * @param followupQuestion the followup question to be added
+     * @return the added followup question if addition was successful, otherwise null
+     */
     @PostMapping("{courseId}/post/new/followupquestion")
     public FollowupQuestion addFollowupQuestion(@PathVariable("courseId") String courseId,
                                                 @RequestParam("sessionId") String sessionId,
@@ -298,6 +340,15 @@ public class PostController {
         return followupQuestion;
     }
 
+    /**
+     * Adds a new followup answer to followup question. Only students/instructors involved in the course can
+     * add a followup answer.
+     *
+     * @param courseId id of the course
+     * @param sessionId sessionId of the poster
+     * @param followupAnswer the followup question to be added
+     * @return the added followup answer if addition was successful, otherwise null
+     */
     @PostMapping("{courseId}/post/new/followupanswer")
     public FollowupAnswer addFollowupAnswer(@PathVariable("courseId") String courseId,
                                             @RequestParam("sessionId") String sessionId,
@@ -320,8 +371,7 @@ public class PostController {
                 || followupAnswer.getFollowupQuestionId() == null
                 || followupAnswer.getContent() == null
                 || followupAnswer.getContent().length() == 0
-                || followupAnswer.getCourseId() == null
-        ) {
+                || followupAnswer.getCourseId() == null) {
             log.info("Failed to add followup question: Invalid followup question properties");
             return null;
         }
@@ -346,7 +396,7 @@ public class PostController {
         followupAnswer.setAuthorName(optionalUser.get().getName());
         followupAnswer.setAuthorType(optionalUser.get().getRole());
 
-        //save answer
+        //save answer and modify parents
         postRepository.save(followupAnswer);
 
         FollowupQuestion fq = optionalFollowupQuestion.get();
@@ -370,17 +420,23 @@ public class PostController {
     //MODIFY POSTS
     //============================================================================
 
-
     //Add view count to question root
+
+    /**
+     * Adds view count to the post. View count is added when a user visits a newly seen question root page.
+     *
+     * @param courseId id of the course
+     * @param session session of the viewer
+     * @param postId the postId of the post to be viewed
+     * @return true if the view count is successfully added, false otherwise
+     */
     @PostMapping("{courseId}/post/{postId}/view")
     public boolean view(
             @PathVariable("courseId") String courseId,
             @PathVariable("postId") String postId,
-            @RequestBody Session session
-    ) {
+            @RequestBody Session session) {
         String sessionId = session.getSessionId();
         //check session, is involved
-        log.info("Trying to add view: " + postId);
         if (courseId.length() != 32 || sessionId.length() != 64 || postId == null) {
             log.info("Failed to add view: Invalid arguments");
             return false;
@@ -394,12 +450,10 @@ public class PostController {
 
         try {
             Optional<QuestionRoot> optionalQuestionRoot = questionRootRepository.findById(postId);
-            log.info("IN VIEW 4, OQR" + optionalQuestionRoot);
             if (!optionalQuestionRoot.isPresent()) {
                 log.info("Failed to add view: Question root not found");
                 return false;
             }
-            log.info("IN VIEW 5, OQR is present");
             QuestionRoot qr = optionalQuestionRoot.get();
             qr.addViewerId(session.getEmail());
             questionRootRepository.save(qr);
@@ -411,6 +465,15 @@ public class PostController {
         return true;
     }
 
+    /**
+     * Likes a post.
+     *
+     * @param courseId id of the course
+     * @param session session of the viewer
+     * @param postId the postId of the post to be viewed
+     * @param value 1 for like, -1 dislike, 0 undo like/dislike
+     * @return true if the post is successfully liked, false otherwise
+     */
     @PostMapping("{courseId}/post/{postId}/like")
     public boolean like(
             @PathVariable("courseId") String courseId,
@@ -420,17 +483,18 @@ public class PostController {
     ) {
         String sessionId = session.getSessionId();
 
-        log.info("Trying to create like to post: " + postId);
-        if (courseId.length() != 32 || postId.length() != 32
-                || sessionId == null || sessionId.length() != 64
+        if (courseId.length() != 32
+                || postId.length() != 32
+                || sessionId == null
+                || sessionId.length() != 64
                 || value == null) {
             log.info("Failed to like post: Invalid arguments");
             return false;
         }
-        Integer i;
+        int vote;
         try {
-            i = Integer.valueOf(value);
-            if (i < -1 || i > 1) {
+            vote = Integer.parseInt(value);
+            if (vote < -1 || vote > 1) {
                 log.info("Failed to like post: Invalid arguments");
                 return false;
             }
@@ -452,14 +516,23 @@ public class PostController {
             return false;
         }
 
+        //like the post
         String userId = sessionRepository.findById(sessionId).get().getEmail();
         Post post = optionalPost.get();
-        post.like(userId, i);
+        post.like(userId, vote);
         postRepository.save(post);
         return true;
     }
 
-
+    /**
+     * Delete a post. Only instructor and the student poster can remove a post.
+     *
+     * @param courseId id of the course
+     * @param session session of the viewer
+     * @param postId the postId of the post to be viewed
+     * @param postType type of the post "QUESTIONROOT", "FOLLOWUPQUESTION", etc.
+     * @return true if the post is successfully deleted, false otherwise
+     */
     @PostMapping("{courseId}/post/{postId}/delete")
     public boolean delete(
             @PathVariable("courseId") String courseId,
@@ -571,38 +644,42 @@ public class PostController {
         return false;
     }
 
+    /**
+     * Check if the user is the poster of a post
+     *
+     * @param courseId id of the course
+     * @param session session of the viewer
+     * @param postId the postId of the post to be viewed
+     * @return true if the user is the poster of a post, otherwise false
+     */
     @PostMapping("{courseId}/post/{postId}/checkOwnership")
     public boolean checkPostOwnership(
             @PathVariable("courseId") String courseId,
             @PathVariable("postId") String postId,
-            @RequestBody Session session
-    ) {
-        if (session == null || courseId.length() != 32 || postId.length() != 32
-        ) {
+            @RequestBody Session session) {
+
+        //check arguments
+        if (session == null || courseId.length() != 32 || postId.length() != 32) {
             log.info("Failed to check ownership: Invalid arguments");
             return false;
         }
 
+        //validate session
         Optional<Session> optionalSession = sessionRepository.findById(session.getSessionId());
         if (!optionalSession.isPresent() || !optionalSession.get().getEmail().equals(session.getEmail())) {
             log.info("Failed to check ownership: Invalid session");
             return false;
         }
 
-        User user = userRepository.findById(session.getEmail()).get();  //if session exists, user exists
-
-        Optional<Post> optionalPost = postRepository.findById(postId);
-        if (!optionalPost.isPresent()) {
+        //check post valid
+        Post post = postRepository.getPostElseNull(postId);
+        if (post == null || !post.getCourseId().equals(courseId)) {
             log.info("Failed to check ownership: Post not found or invalid");
             return false;
         }
-        Post post = optionalPost.get();
-        if (!post.getCourseId().equals(courseId)) {
-            log.info("Failed to check ownership: Post course does not exists");
-            return false;
-        }
 
-        if (!optionalPost.get().getAuthorUserId().equals(session.getEmail())) {
+        //check the requester is the post author
+        if (!post.getAuthorUserId().equals(session.getEmail())) {
             log.info("Failed to check ownership: Unauthorized");
             return false;
         }
@@ -610,45 +687,27 @@ public class PostController {
     }
 
 
-    @PostMapping("{courseId}/post/{postId}/get")
-    public Post getPost(
-            @PathVariable("courseId") String courseId,
-            @PathVariable("postId") String postId,
-            @RequestBody Session session) {
-        if (courseController.checkCourseMembership(courseId, session.getSessionId()) == null) {
-            log.info("Failed to get post: User is not a member of the course or has invalid session");
-            return null;
-        }
-        Optional<Post> optionalPost = postRepository.findById(postId);
-        if (!optionalPost.isPresent()) {
-            log.info("Failed to get post: Post not found");
-            return null;
-        }
-
-        Post post = optionalPost.get();
-        log.info("FETCH POST: " + post);
-        return post;
-    }
-
     @PostMapping("{courseId}/post/{postId}/edit")
     public boolean editPost(
             @PathVariable("courseId") String courseId,
             @PathVariable("postId") String postId,
             @RequestParam("sessionId") String sessionId,
             @RequestBody Post modifiedPost) {
-        Session session = sessionRepository.findById(sessionId).get();
+        //Check session is valid, and user authorized to edit post
+        Session session = sessionRepository.getSessionElseNull(sessionId);
         if (!checkPostOwnership(courseId, postId, session)) {
             log.info("Failed to edit post: Unauthorized user");
             return false;
         }
 
-        Optional<Post> optionalPost = postRepository.findById(postId);
-        if (!optionalPost.isPresent()) {
+        //Check posts exists
+        Post post = postRepository.getPostElseNull(postId);
+        if (post == null) {
             log.info("Failed to edit post: Post does not exist");
             return false;
         }
 
-        Post post = optionalPost.get();
+        //Modify and save
         post.setContent(modifiedPost.getContent());
         postRepository.save(post);
         log.info("EDIT POST: " + post);

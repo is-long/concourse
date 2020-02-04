@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface QuestionRootAnswerRepository extends CrudRepository<QuestionRootAnswer, String> {
+
 }

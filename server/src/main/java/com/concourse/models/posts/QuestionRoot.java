@@ -20,7 +20,6 @@ public class QuestionRoot extends Post {
     private Integer viewCount = 0;
     private String folder;
 
-//    private boolean hasInstructorAnswer = false;
 
     @ElementCollection()
     private List<String> viewerIds = new ArrayList<>();
@@ -30,24 +29,6 @@ public class QuestionRoot extends Post {
 
     @OneToMany
     private List<FollowupQuestion> followupQuestionList = new ArrayList<>();
-
-//    public void setHasInstructorAnswer(){
-//        Boolean x = null;
-//        for (QuestionRootAnswer qra: questionRootAnswerList) {
-//            if (qra.getAuthorType().equals("INSTRUCTOR")){
-//                x = true;
-//                hasInstructorAnswer = true;
-//                break;
-//            }
-//        }
-//        if (x == null){
-//            hasInstructorAnswer = false;
-//        }
-//    }
-
-
-
-
 
     public QuestionRoot(){
         super();

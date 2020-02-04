@@ -11,6 +11,7 @@ import java.util.Optional;
 public interface CourseInviteTokenRepository extends CrudRepository<CourseInviteToken, String> {
 
     default CourseInviteToken getCourseInviteTokenElseNull(String inviteId){
+        if (inviteId == null) return null;
         Optional<CourseInviteToken> optionalCourseInviteToken = findById(inviteId);
         return optionalCourseInviteToken.orElse(null);
     }

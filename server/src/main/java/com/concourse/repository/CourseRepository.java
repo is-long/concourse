@@ -26,13 +26,9 @@ public interface CourseRepository extends CrudRepository<Course, String> {
     }
 
     default Course getCourseElseNull(String courseId){
+        if (courseId == null) return null;
         Optional<Course> optionalCourse = findById(courseId);
         return optionalCourse.orElse(null);
-    }
-
-    default boolean isUserPartOfCourse(String userId, String courseId){
-       Course course = getCourseElseNull(courseId);
-       return course != null && course.getStudentIds().contains(userId);
     }
 
     default Course getMockCourse(){

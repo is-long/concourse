@@ -56,6 +56,11 @@ public class UserController {
     // ACCESS USER;
     //===================================================
 
+    /**
+     * Return user's own object, if the session belongs to the user
+     * @param session user's session
+     * @return the user's own object, if the request is authorized
+     */
     @PostMapping("self")
     public User getSelf(@RequestBody Session session) {
         if (!sessionController.validate(session)) {
@@ -67,6 +72,11 @@ public class UserController {
         return user;
     }
 
+    /**
+     * Check if user is registered AND has verified the email
+     * @param user the user to be checked
+     * @return true if user is registered, false otherwise
+     */
     @PostMapping("registration/check")
     public boolean checkRegistration(@RequestBody User user) {
         log.info("Checking registration for: " + user);
@@ -117,39 +127,48 @@ public class UserController {
     // NEW USER
     //===================================================
 
+    /**
+     * Verify user's email and complete registration
+     *
+     * @param confirmationId the id sent to user's email in the confirmation link
+     * @return true if user's email is confirmed, false otherwise
+     */
     @GetMapping("registration/confirm/{confirmationId}")
     public boolean confirmEmail(@PathVariable("confirmationId") String confirmationId) {
-        Optional<ConfirmationToken> token = emailConfirmationTokenRepository.findById(confirmationId);
+        Optional<ConfirmationToken> optionalConfirmationToken = emailConfirmationTokenRepository.findById(confirmationId);
 
-        if (token.isPresent()) {
-            Optional<Student> optionalStudent = studentRepository.findById(token.get().getEmail());
-            Optional<Instructor> optionalInstructor = instructorRepository.findById(token.get().getEmail());
-            if (optionalStudent.isPresent()) {
-                Student student = optionalStudent.get();
+        if (optionalConfirmationToken.isPresent()) {
+            ConfirmationToken token = optionalConfirmationToken.get();
+
+            //check if student or instructor account
+            Student student = studentRepository.getStudentElseNull(token.getEmail());
+            if (student != null) {
                 student.setEmailConfirmed(true);
                 studentRepository.save(student);
                 log.info("STUDENT EMAIL CONFIRMED: " + student);
-                emailConfirmationTokenRepository.delete(token.get());
+                emailConfirmationTokenRepository.delete(token);
 
 
-                //Send invite email to mock course to new student
+                //Send invite email to mock course for new student
                 Course mockCourse = courseRepository.getMockCourse();
                 HashMap<String, CourseInviteToken> emailTokenMap = new HashMap<>();
                 CourseInviteToken inviteToken = new CourseInviteToken(mockCourse.getId(), "STUDENT", student.getEmail());
                 courseInviteTokenRepository.save(inviteToken);
                 emailTokenMap.put(student.getEmail(), inviteToken);
                 emailServices.sendCourseInviteToken(emailTokenMap, mockCourse.getName());
-
+                log.info("INVITATION TO MOCK COURSE SENT: " + student);
                 return true;
             }
-            if (optionalInstructor.isPresent()) {
-                Instructor instructor = optionalInstructor.get();
+
+            Instructor instructor = instructorRepository.getInstructorElseNull(token.getEmail());
+            if (instructor != null) {
                 instructor.setEmailConfirmed(true);
                 instructorRepository.save(instructor);
                 log.info("INSTRUCTOR EMAIL CONFIRMED: " + instructor);
-                emailConfirmationTokenRepository.delete(token.get());
+                emailConfirmationTokenRepository.delete(token);
                 return true;
             }
+
             log.info("Email confirmation failed: Student/instructor not found");
             return false;
         }
@@ -157,10 +176,14 @@ public class UserController {
         return false;
     }
 
+    /**
+     * Add a new user of type instructor
+     *
+     * @param instructor new instructor to be added
+     * @return the instructor, if successfully added, otherwise null
+     */
     @PostMapping("registration/new/instructor")
     public Instructor addInstructor(@RequestBody Instructor instructor) {
-        log.info("TRYING TO ADD INSTRUCTOR: " + instructor);
-        log.info("TRYING TO ADD USER : " + ((User) instructor).getEmail());
         if (!checkRegistration(instructor)) {
             ConfirmationToken token =
                     emailConfirmationTokenRepository.findConfirmationTokenByEmail(instructor.getEmail());
@@ -177,12 +200,19 @@ public class UserController {
             log.info("SAVED INSTRUCTOR: " + instructor);
             return instructor;
         }
+
+        log.info("Failed to save instructor: " + instructor);
         return null;
     }
 
+    /**
+     * Add a new user of type student
+     *
+     * @param student new student to be added
+     * @return the student, if successfully added, otherwise null
+     */
     @PostMapping("registration/new/student")
     public Student addStudent(@RequestBody Student student) {
-        log.info("TRYING TO ADD STUDENT: " + student);
         if (!checkRegistration(student)) {
             ConfirmationToken token =
                     emailConfirmationTokenRepository.findConfirmationTokenByEmail(student.getEmail());
@@ -197,6 +227,8 @@ public class UserController {
             log.info("SAVED STUDENT: " + student);
             return student;
         }
+
+        log.info("Failed to save student: " + student);
         return null;
     }
 }

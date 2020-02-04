@@ -16,9 +16,7 @@ import java.util.Optional;
 @RequestMapping("session")
 public class SessionController {
 
-    @Autowired
-    private SessionRepository sessionRepository;
-
+    private final SessionRepository sessionRepository;
     private final EmailServices emailServices;
 
     public SessionController(SessionRepository sessionRepository, EmailServices emailServices) {
@@ -28,8 +26,8 @@ public class SessionController {
 
     /**
      * Generate new session
-     * @param session
-     * @return
+     * @param session session to be generated
+     * @return the session to be generated
      */
     @PostMapping("new")
     public Session generate(@RequestBody Session session) {
@@ -44,6 +42,11 @@ public class SessionController {
         return session;
     }
 
+    /**
+     * Validate session.
+     * @param session session to be validated
+     * @return true if the session is valid, false otherwise
+     */
     @PostMapping("validate")
     public boolean validate(@RequestBody Session session){
         log.info("Session to validate: " + session);
@@ -79,15 +82,26 @@ public class SessionController {
         return true;
     }
 
+    /**
+     * Private helper method to validate sessionId
+     * @param sessionId sessionId of the session to be validated
+     * @return true if session is valid, false otherwise
+     */
     public boolean validate(String sessionId){
-        Optional<Session> s = sessionRepository.findById(sessionId);
-        if (!s.isPresent()){
+        Session session = sessionRepository.getSessionElseNull(sessionId);
+        if (session == null){
             log.info("Invalid session: Session does not exist");
             return false;
         }
-        return validate(s.get());
+        return validate(session);
     }
 
+    /**
+     * Remove session
+     *
+     * @param session session to be removed
+     * @return true if the session is successfully removed, false otherwise
+     */
     @PostMapping("purge")
     public boolean purge(@RequestBody Session session){
         if (session.getEmail() == null || !emailServices.isValidEmailAddress(session.getEmail())) {
